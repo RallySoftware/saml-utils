@@ -18,14 +18,13 @@ test {
 }
 
 dependencies {
-    // This dependency is exported to consumers, that is to say found on their compile classpath.
-    api 'org.apache.commons:commons-math3:3.6.1'
+    api 'org.opensaml:opensaml:2.6.4'
 
     // This dependency is used internally, and not exposed to consumers on their own compile classpath.
     implementation 'com.google.guava:guava:23.0'
 
     // Use TestNG framework, also requires calling test.useTestNG() below
-    testImplementation 'org.testng:testng:6.10'
+    testImplementation 'org.testng:testng:6.14.2'
 }
 
 // In this section you declare where to find the dependencies of your project
