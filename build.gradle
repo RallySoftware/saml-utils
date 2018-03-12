@@ -12,16 +12,12 @@ plugins {
 }
 
 test {
-
-    // Use TestNG for unit tests
     useTestNG()
 }
 
 dependencies {
     api 'org.opensaml:opensaml:2.6.4'
-
-    // This dependency is used internally, and not exposed to consumers on their own compile classpath.
-    implementation 'com.google.guava:guava:23.0'
+    api 'org.slf4j:slf4j-api:1.7.25'
 
     // Use TestNG framework, also requires calling test.useTestNG() below
     testImplementation 'org.testng:testng:6.14.2'

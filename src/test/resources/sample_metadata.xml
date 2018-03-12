@@ -1,0 +1,21 @@
+<EntityDescriptor ID="SM143a7094613eea2bd7a263dfae02135d0096ac5cabed" entityID="sso_idp" xmlns="urn:oasis:names:tc:SAML:2.0:metadata">
+    <IDPSSODescriptor WantAuthnRequestsSigned="false" ID="SM6441cd7e316d3a47c886c1847e5745a989d724bddfa" protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+        <KeyDescriptor use="signing">
+            <ns1:KeyInfo Id="SM133abb192bc9ba611e04f9544393ffd498a930532f1e" xmlns:ns1="http://www.w3.org/2000/09/xmldsig#">
+                <ns1:X509Data>
+                    <ns1:X509IssuerSerial>
+                        <ns1:X509IssuerName>CN=SampleSAMLIDP,OU=Security SWAT,O=CA Technologies</ns1:X509IssuerName>
+                        <ns1:X509SerialNumber>1466536035</ns1:X509SerialNumber>
+                    </ns1:X509IssuerSerial>
+                    <ns1:X509Certificate>MIIDEDCCAfigAwIBAgIEV2mQYzANBgkqhkiG9w0BAQsFADBKMRgwFgYDVQQKEw9DQSBUZWNobm9sb2dpZXMxFjAUBgNVBAsTDVNlY3VyaXR5IFNXQVQxFjAUBgNVBAMTDVNhbXBsZVNBTUxJRFAwHhcNMTYwNjIxMTkwNzE1WhcNMjYwNjE5MTkwNzE1WjBKMRgwFgYDVQQKEw9DQSBUZWNobm9sb2dpZXMxFjAUBgNVBAsTDVNlY3VyaXR5IFNXQVQxFjAUBgNVBAMTDVNhbXBsZVNBTUxJRFAwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCQ80NUNNsL6/XY5uLkRTZaQxovMyuDNhJXhbot/GlZfYeC40tjUbiNbwvAUfW9wg/rzqiLFvzSA4raNPa0ydy07yvKXbjGMGDqTyFZysLEbiFRlHHvPGtew0x8CpSxUiDGXH+lH8hk/PDm3l2pjs37CoyX/W0yGbn2RYDzcKgCg6TST92L3gOPaBR3680Usyf8erpc83+h8opCnDVRYztYfeJWJc03LzTnF7F5/H2mavGL6DeuNKlxiv/9kkjRt5ysJdcdEj2YEoKQIs7g7HTWNNOpokXRBH8eqQHHI3kGbeNnzTip/yJZositVgle4w+zU7raYB+isEq/ryC5+iYvAgMBAAEwDQYJKoZIhvcNAQELBQADggEBAG4oGnJWfqDuMuOwJ6rOzWqSv/JusY/wkGbwFEapO4G1SZhrH0Jb3eistNNOemq+tCD2qG+W3vdlMeovgJTfMQUBQOvMplJR9KUp5rIN64HS6kcHZGsP0SB6Wj1a8vCV3esoZHVoXrKrIskNGrXPr2H3y6hvSvPyqmWLrk8TQyeJFg3msrk03YbWErjvYxcC1FMKGiU+BnK3tZ1zf46pCGjIbrJRk7Uy8AJpWWWj8f1AkVHflMNRd2bqYVtOkw5FxyqJz9aN33TmtJuS0pjd235DfMdWI2A5zPM0gk1MZQN6bHoarNiPYQj+vOBU86ckN18QSDEslM+tJFg2+abPK3I=</ns1:X509Certificate>
+                    <ns1:X509SubjectName>CN=SampleSAMLIDP,OU=Security SWAT,O=CA Technologies</ns1:X509SubjectName>
+                </ns1:X509Data>
+            </ns1:KeyInfo>
+        </KeyDescriptor>
+        <NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified</NameIDFormat>
+        <SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="https://rapidsso.ca.com:443/affwebservices/public/saml2sso"/>
+        <SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://rapidsso.ca.com:443/affwebservices/public/saml2sso"/>
+        <ns2:Attribute Name="subscription" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified" xmlns:ns2="urn:oasis:names:tc:SAML:2.0:assertion"/>
+        <ns3:Attribute Name="email" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified" xmlns:ns3="urn:oasis:names:tc:SAML:2.0:assertion"/>
+    </IDPSSODescriptor>
+</EntityDescriptor>

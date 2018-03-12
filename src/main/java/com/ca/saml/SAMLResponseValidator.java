@@ -32,7 +32,7 @@ public class SAMLResponseValidator {
         this.credential = credential;
     }
 
-    public SAMLObject readAndValidateSAMLResponse(String base64Parameter) throws MessageDecodingException, ValidationException {
+    public Response readAndValidateSAMLResponse(String base64Parameter) throws MessageDecodingException, ValidationException {
         byte[] decode = Base64.decode(base64Parameter);
         try {
             Document messageDoc = Configuration.getParserPool().parse(new ByteArrayInputStream(decode));

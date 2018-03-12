@@ -11,6 +11,7 @@ import org.opensaml.saml2.metadata.provider.DOMMetadataProvider;
 import org.opensaml.saml2.metadata.provider.MetadataProvider;
 import org.opensaml.saml2.metadata.provider.MetadataProviderException;
 import org.opensaml.xml.Configuration;
+import org.opensaml.xml.XMLObject;
 import org.opensaml.xml.parse.XMLParserException;
 import org.opensaml.xml.security.credential.Credential;
 import org.opensaml.xml.security.credential.UsageType;
@@ -22,33 +23,54 @@ import org.opensaml.xml.signature.SignatureValidator;
 import org.opensaml.xml.validation.ValidationException;
 import org.w3c.dom.Document;
 
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SAMLUtils {
 
     public static final String SAML_SUCCESS = "urn:oasis:names:tc:SAML:2.0:status:Success";
 
-    static {
-        try {
-            DefaultBootstrap.bootstrap();
-        } catch (Throwable e) {
-            throw new RuntimeException("error initializing opensaml", e);
+    private static final AtomicBoolean initialized = new AtomicBoolean(false);
+
+    public static void init() {
+        if (initialized.compareAndSet(false, true)) {
+            try {
+                DefaultBootstrap.bootstrap();
+            } catch (Throwable e) {
+                throw new RuntimeException("error initializing opensaml", e);
+            }
         }
     }
 
-    public static SAMLResponseValidator createSAMLResponseValidator(File metadataFile) throws FileNotFoundException, SamlException {
-        MetadataProvider metadataProvider = loadSAMLMetadataFromFile(metadataFile);
+    public static SAMLResponseValidator createSAMLResponseValidator(File metadataFile) throws IOException, SamlException {
+        return createSAMLResponseValidator(Files.readAllBytes(metadataFile.toPath()));
+    }
+
+    public static SAMLResponseValidator createSAMLResponseValidator(byte[] metadataXmlBytes) throws FileNotFoundException, SamlException {
+        MetadataProvider metadataProvider = loadSAMLMetadata(new ByteArrayInputStream(metadataXmlBytes));
         EntityDescriptor entityDescriptor;
         try {
             entityDescriptor = (EntityDescriptor) metadataProvider.getMetadata();
@@ -66,19 +88,7 @@ public class SAMLUtils {
             throw new SamlException("Cannot retrieve IDP SSO descriptor");
         }
 
-        Credential credential = idpSsoDescriptor
-                .getKeyDescriptors()
-                .stream()
-                .filter(x -> x.getUse() == UsageType.SIGNING)
-                .map(KeyDescriptor::getKeyInfo)
-                .filter(Objects::nonNull)
-                .map(KeyInfoType::getX509Datas)
-                .filter(Objects::nonNull)
-                .flatMap(Collection::stream)
-                .flatMap(data -> data.getX509Certificates().stream())
-                .map(SAMLUtils::xmlCertToJava)
-                .map(SAMLUtils::toCredential)
-                .findFirst()
+        Credential credential = getFirstCredential(idpSsoDescriptor)
                 .orElseThrow(() -> new RuntimeException("no signing credential found in IDP metadata"));
         return new SAMLResponseValidator(ssoEntityId, credential);
     }
@@ -106,6 +116,21 @@ public class SAMLUtils {
                 // ignored
             }
         }
+    }
+
+    public static Optional<Credential> getFirstCredential(IDPSSODescriptor descriptor) {
+        return descriptor.getKeyDescriptors()
+                .stream()
+                .filter(x -> x.getUse() == UsageType.SIGNING)
+                .map(KeyDescriptor::getKeyInfo)
+                .filter(Objects::nonNull)
+                .map(KeyInfoType::getX509Datas)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .flatMap(data -> data.getX509Certificates().stream())
+                .map(SAMLUtils::xmlCertToJava)
+                .map(SAMLUtils::toCredential)
+                .findFirst();
     }
 
     public static boolean validateSignatures(SAMLObject samlResponse, Credential credential) throws ValidationException {
@@ -156,6 +181,50 @@ public class SAMLUtils {
         c.setPublicKey(certificate.getPublicKey());
         c.setCRLs(Collections.emptyList());
         return c;
+    }
+
+    public static byte[] readClasspathResource(String resource) {
+        try (InputStream is = SAMLUtils.class.getClassLoader().getResourceAsStream(resource)) {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            byte[] buf = new byte[1024];
+            int read;
+            while ((read = is.read(buf)) >= 0) {
+                baos.write(buf, 0, read);
+            }
+            return baos.toByteArray();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public static Map<String, String> getAttributes(Response response) {
+        Map<String, String> map = new HashMap<>();
+        response.getAssertions().stream()
+                .flatMap(assertion -> assertion.getAttributeStatements().stream())
+                .flatMap(attributeStatement -> attributeStatement.getAttributes().stream())
+                .forEach(attribute -> {
+                    String name = attribute.getName();
+                    String content = attribute.getAttributeValues().get(0).getDOM().getTextContent();
+                    map.put(name, content);
+                });
+        return Collections.unmodifiableMap(map);
+    }
+
+    public static String toString(XMLObject object) {
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            TransformerFactory tf = TransformerFactory.newInstance();
+            Transformer transformer = tf.newTransformer();
+            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
+            transformer.setOutputProperty(OutputKeys.METHOD, "xml");
+            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+            transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+            transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
+            transformer.transform(new DOMSource(object.getDOM()), new StreamResult(new OutputStreamWriter(baos, "UTF-8")));
+            return new String(baos.toByteArray(), StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            throw new RuntimeException("error converting to string", e);
+        }
     }
 
     private SAMLUtils() {
