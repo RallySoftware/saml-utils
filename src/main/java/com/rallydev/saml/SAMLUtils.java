@@ -1,4 +1,4 @@
-package com.ca.saml;
+package com.rallydev.saml;
 
 import org.opensaml.DefaultBootstrap;
 import org.opensaml.saml2.core.Response;

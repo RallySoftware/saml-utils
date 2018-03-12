@@ -22,3 +22,16 @@ Map<String, String> parsedAttributes = SAMLUtils.getAttributes(response);
 // 'email' => 'ue@ca.com'
 // 'subscription => '100'
 ```
+### Publishing artifact
+
+```$xslt
+
+gw clean
+gw build
+gw publishSAMLJarPublicationToMavenRepository
+
+```
+
+Published artifact are under 
+
+http://repo-depot.f4tech.com/artifactory/rally-maven/com/rallydev/saml-utils-jar/

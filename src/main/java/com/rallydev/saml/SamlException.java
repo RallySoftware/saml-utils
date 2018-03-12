@@ -1,4 +1,4 @@
-package com.ca.saml;
+package com.rallydev.saml;
 
 public class SamlException extends Exception {
     public SamlException(String message) {
