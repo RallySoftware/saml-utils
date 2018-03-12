@@ -28,21 +28,12 @@ public class SAMLResponseValidatorTest extends Assert {
         attributes.put("subscription", "100");
         Response response = validator.readAndValidateSAMLResponse(responseBuilder.createSAMLResponse(attributes));
 
-        response.getAssertions().stream()
-                .flatMap(assertion -> assertion.getAttributeStatements().stream())
-                .flatMap(attributeStatement -> attributeStatement.getAttributes().stream())
-                .forEach(attribute -> {
-                    String name = attribute.getName();
-                    String content = attribute.getAttributeValues().get(0).getDOM().getTextContent();
-                    System.out.println(name + ": " + content);
-                });
-
         System.out.println(SAMLUtils.toString(response));
 
         Map<String, String> parsedAttributes = SAMLUtils.getAttributes(response);
+        System.out.println(parsedAttributes);
         assertEquals(parsedAttributes.size(), 2);
-        assertEquals(parsedAttributes.get("email"), "ue@test.com");
-        assertEquals(parsedAttributes.get("subscription"), "100");
+        assertEquals(parsedAttributes, attributes);
     }
 
 }
