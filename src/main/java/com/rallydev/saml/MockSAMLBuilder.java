@@ -1,5 +1,6 @@
-package com.ca.saml;
+package com.rallydev.saml;
 
+import com.rallydev.saml.SAMLUtils;
 import org.joda.time.DateTime;
 import org.opensaml.Configuration;
 import org.opensaml.common.SAMLObjectBuilder;

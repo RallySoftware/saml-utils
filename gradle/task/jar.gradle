@@ -1,0 +1,39 @@
+import java.text.SimpleDateFormat
+
+apply plugin: 'java'
+apply plugin: 'application'
+apply plugin: "com.github.johnrengelman.shadow"
+apply plugin: 'maven-publish'
+
+
+ext.releaseName = System.getenv('RELEASE_NAME') ?: 'master'
+
+ext.buildNumber = System.getenv('BUILD_NUMBER') ?: "SNAPSHOT-${getDate()}"
+
+mainClassName = 'com.ca.saml.SAMLUtils'
+
+shadowJar {
+    baseName = 'saml-utils'
+    version = "${releaseName}-${buildNumber}"
+}
+
+publishing {
+    publications {
+        SAMLJar(MavenPublication) {
+            artifact "build/libs/saml-utils-" + "${releaseName}-${buildNumber}" + "-all.jar"
+            group = 'com.rallydev'
+            artifactId = 'saml-utils-jar'
+            version = "${releaseName}-${buildNumber}"
+        }
+    }
+
+    repositories {
+        maven { url 'http://repo-depot.f4tech.com/artifactory/rally-maven' }
+    }
+}
+
+def getDate() {
+    def now = Calendar.instance
+    def date = now.time
+    return  new SimpleDateFormat("M-d-yyyy").format(date)
+}

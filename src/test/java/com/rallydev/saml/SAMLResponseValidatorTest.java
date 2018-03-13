@@ -1,4 +1,4 @@
-package com.ca.saml;
+package com.rallydev.saml;
 
 import org.opensaml.saml2.core.Response;
 import org.opensaml.ws.message.decoder.MessageDecodingException;
@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.ca.saml.MockSAMLBuilder.createSAMLResponse;
+import static com.rallydev.saml.MockSAMLBuilder.createSAMLResponse;
 
 public class SAMLResponseValidatorTest extends Assert {
 
