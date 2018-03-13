@@ -27,7 +27,7 @@ Map<String, String> parsedAttributes = SAMLUtils.getAttributes(response);
 ```$xslt
 
 gw clean
-gw build
+gw shadowJar
 gw publishSAMLJarPublicationToMavenRepository
 
 ```
