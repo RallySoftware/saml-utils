@@ -12,7 +12,7 @@ SAMLResponseValidator validator = SAMLUtils.createSAMLResponseValidator(new File
 Validate a SAMLResponse:
 ```java
 String samlResponse = request.getParameter("SAMLResponse");
-Response response = validator.readAndValidateSAMLResponse(responseString);
+Response response = validator.readAndValidateSAMLResponse(samlResponse);
 ```
 
 And pull the attributes from the response:
