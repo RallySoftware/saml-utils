@@ -5,6 +5,7 @@ import org.opensaml.common.SAMLObject;
 import org.opensaml.saml2.core.Assertion;
 import org.opensaml.saml2.core.Conditions;
 import org.opensaml.saml2.core.Response;
+import org.opensaml.saml2.core.StatusCode;
 import org.opensaml.saml2.core.validator.ResponseSchemaValidator;
 import org.opensaml.ws.message.decoder.MessageDecodingException;
 import org.opensaml.xml.Configuration;
@@ -21,18 +22,39 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.io.ByteArrayInputStream;
+import java.util.Objects;
 
+/**
+ * A simplified SAMLResponse validation class. Only supports validating against a single IDP identity and Credential.
+ */
 public class SAMLResponseValidator {
 
     private final String ssoEntityId;
     private final Credential credential;
 
+    /**
+     * Create a new validator for the given entity and credential.
+     *
+     * @param ssoEntityId the entity ID that will be be expected (also call the Issuer)
+     * @param credential  The credential that will be used to validate any signed elements
+     */
     public SAMLResponseValidator(String ssoEntityId, Credential credential) {
         this.ssoEntityId = ssoEntityId;
         this.credential = credential;
     }
 
+    /**
+     * Decode, parse, and validate the given base64 encoded SAMLResponse. GZIP inflating will be handled automatically
+     * by the underlying opensaml library.
+     *
+     * @param base64Parameter The string parameter to validate (typically the SAMLResponse query parameter from the servlet
+     *                        request)
+     * @return The parsed {@link Response} object
+     * @throws MessageDecodingException for any issues decoding/inflating/parsing the SAML response data
+     * @throws ValidationException      for any validation errors
+     */
     public Response readAndValidateSAMLResponse(String base64Parameter) throws MessageDecodingException, ValidationException {
+        Objects.requireNonNull(base64Parameter);
         byte[] decode = Base64.decode(base64Parameter);
         try {
             Document messageDoc = Configuration.getParserPool().parse(new ByteArrayInputStream(decode));
@@ -51,7 +73,16 @@ public class SAMLResponseValidator {
         }
     }
 
+    /**
+     * Validate the given {@link Response}. Will validate credentials, signatures, assertions, and assertion conditions.
+     * This validation REQUIRES at least one signature for assertions, else the response is not considered trustworthy
+     * and therefore invalid.
+     *
+     * @param samlResponse The SAML response to validate
+     * @throws ValidationException
+     */
     public void validate(Response samlResponse) throws ValidationException {
+        Objects.requireNonNull(samlResponse);
         validateCredentials(samlResponse);
         validateSignatures(samlResponse);
         validateAssertion(samlResponse);
@@ -106,17 +137,17 @@ public class SAMLResponseValidator {
         }
         Assertion assertion = credentials.getAssertions().get(0);
         if (!assertion.getIssuer().getValue().equals(ssoEntityId)) {
-            throw new ValidationException("Siteminder is the one that should be issuing the assertion");
+            throw new ValidationException(ssoEntityId + " is the one that should be issuing the assertion");
         }
     }
 
     private void validateCredentials(Response credentials) throws ValidationException {
         new ResponseSchemaValidator().validate(credentials);
         if (!credentials.getIssuer().getValue().equals(ssoEntityId)) {
-            throw new ValidationException("The response is not from siteminder");
+            throw new ValidationException("The response is not from " + ssoEntityId);
         }
         String statusCode = credentials.getStatus().getStatusCode().getValue();
-        if (!statusCode.equals(SAMLUtils.SAML_SUCCESS)) {
+        if (!statusCode.equals(StatusCode.SUCCESS_URI)) {
             throw new ValidationException("Invalid status code: " + statusCode);
         }
     }

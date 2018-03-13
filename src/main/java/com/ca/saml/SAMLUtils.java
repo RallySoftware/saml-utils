@@ -1,8 +1,6 @@
 package com.ca.saml;
 
 import org.opensaml.DefaultBootstrap;
-import org.opensaml.common.SAMLObject;
-import org.opensaml.saml2.core.Assertion;
 import org.opensaml.saml2.core.Response;
 import org.opensaml.saml2.metadata.EntityDescriptor;
 import org.opensaml.saml2.metadata.IDPSSODescriptor;
@@ -18,9 +16,6 @@ import org.opensaml.xml.security.credential.UsageType;
 import org.opensaml.xml.security.keyinfo.KeyInfoHelper;
 import org.opensaml.xml.security.x509.BasicX509Credential;
 import org.opensaml.xml.signature.KeyInfoType;
-import org.opensaml.xml.signature.Signature;
-import org.opensaml.xml.signature.SignatureValidator;
-import org.opensaml.xml.validation.ValidationException;
 import org.w3c.dom.Document;
 
 import javax.xml.transform.OutputKeys;
@@ -37,6 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.UncheckedIOException;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.cert.CertificateException;
@@ -49,9 +45,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Static SAML utilities.
+ */
 public class SAMLUtils {
-
-    public static final String SAML_SUCCESS = "urn:oasis:names:tc:SAML:2.0:status:Success";
 
     private static final AtomicBoolean initialized = new AtomicBoolean(false);
 
@@ -65,12 +62,33 @@ public class SAMLUtils {
         }
     }
 
+    /**
+     * Create a new {@link SAMLResponseValidator} from the given IDP metadata XML file.
+     *
+     * @param metadataFile The IDP exported XML metadata file
+     * @return A new SAMLResponseValidator that will use the entity ID and credential found in the metadata to validate
+     * responses.
+     * @throws IOException   On any file read error
+     * @throws SamlException On any error parsing/validating the metadata
+     */
     public static SAMLResponseValidator createSAMLResponseValidator(File metadataFile) throws IOException, SamlException {
-        return createSAMLResponseValidator(Files.readAllBytes(metadataFile.toPath()));
+        return createSAMLResponseValidator(loadSAMLMetadataFromFile(metadataFile));
     }
 
-    public static SAMLResponseValidator createSAMLResponseValidator(byte[] metadataXmlBytes) throws FileNotFoundException, SamlException {
+    /**
+     * Create a new {@link SAMLResponseValidator} from the given IDP metadata XML bytes.
+     *
+     * @param metadataXmlBytes The IDP metadata
+     * @return A new SAMLResponseValidator that will use the entity ID and credential found in the metadata to validate
+     * responses.
+     * @throws SamlException On any error parsing/validating the metadata
+     */
+    public static SAMLResponseValidator createSAMLResponseValidator(byte[] metadataXmlBytes) throws SamlException {
         MetadataProvider metadataProvider = loadSAMLMetadata(new ByteArrayInputStream(metadataXmlBytes));
+        return createSAMLResponseValidator(metadataProvider);
+    }
+
+    private static SAMLResponseValidator createSAMLResponseValidator(MetadataProvider metadataProvider) throws SamlException {
         EntityDescriptor entityDescriptor;
         try {
             entityDescriptor = (EntityDescriptor) metadataProvider.getMetadata();
@@ -133,40 +151,6 @@ public class SAMLUtils {
                 .findFirst();
     }
 
-    public static boolean validateSignatures(SAMLObject samlResponse, Credential credential) throws ValidationException {
-        if (samlResponse == null || credential == null) {
-            return true;
-        }
-        if (samlResponse instanceof Response) {
-            Response response = (Response) samlResponse;
-            if (response.isSigned()) {
-                Signature signature = response.getSignature();
-                boolean isValid = validateSignature(signature, credential);
-                if (!isValid) {
-                    return false;
-                }
-            }
-            for (Assertion assertion : response.getAssertions()) {
-                if (assertion.isSigned()) {
-                    boolean isValid = validateSignature(assertion.getSignature(), credential);
-                    if (!isValid) {
-                        return false;
-                    }
-                }
-            }
-        }
-        return true;
-    }
-
-    public static boolean validateSignature(Signature signature, Credential credential) throws ValidationException {
-        if (signature == null || credential == null) {
-            return true;
-        }
-        SignatureValidator validator = new SignatureValidator(credential);
-        validator.validate(signature);
-        return true;
-    }
-
     public static X509Certificate xmlCertToJava(org.opensaml.xml.signature.X509Certificate xmlCertificate) {
         try {
             return KeyInfoHelper.getCertificate(xmlCertificate);
@@ -183,7 +167,24 @@ public class SAMLUtils {
         return c;
     }
 
+    public static byte[] loadResource(String locationUri) {
+        try {
+            URI uri = URI.create(locationUri);
+            String scheme = uri.getScheme();
+            if (Objects.equals(scheme, "classpath")) {
+                return readClasspathResource(uri.getPath());
+            } else {
+                return Files.readAllBytes(new File(uri.getPath()).toPath());
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
     public static byte[] readClasspathResource(String resource) {
+        while (resource.startsWith("/")) {
+            resource = resource.substring(1);
+        }
         try (InputStream is = SAMLUtils.class.getClassLoader().getResourceAsStream(resource)) {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             byte[] buf = new byte[1024];
@@ -197,6 +198,14 @@ public class SAMLUtils {
         }
     }
 
+    /**
+     * Get all attributes from the SAML Response. This will iterate through all assertions and attributes statements
+     * to pull the names and values of the attributes. WARNING: If there are duplicate attribute names, only the last
+     * one found will be returned.
+     *
+     * @param response The SAML response to get attributes from
+     * @return An immutable map of attribute name:value pairs
+     */
     public static Map<String, String> getAttributes(Response response) {
         Map<String, String> map = new HashMap<>();
         response.getAssertions().stream()
