@@ -89,13 +89,13 @@ public class SAMLResponseValidator {
         validateDateInAssertion(samlResponse);
     }
 
-    private void validateSignatures(SAMLObject credentials) throws ValidationException {
-        if (credentials == null) {
-            throw new ValidationException("Credentials was null");
+    private void validateSignatures(SAMLObject samlResponse) throws ValidationException {
+        if (samlResponse == null) {
+            throw new ValidationException("SAML Response was null");
         }
         boolean wasSigned = false;
-        if (credentials instanceof Response) {
-            Response response = (Response) credentials;
+        if (samlResponse instanceof Response) {
+            Response response = (Response) samlResponse;
             for (Assertion assertion : response.getAssertions()) {
                 if (assertion.isSigned()) {
                     wasSigned = true;
@@ -116,8 +116,8 @@ public class SAMLResponseValidator {
         signatureValidator.validate(signature);
     }
 
-    private void validateDateInAssertion(Response credentials) throws ValidationException {
-        Assertion assertion = credentials.getAssertions().get(0);
+    private void validateDateInAssertion(Response samlResponse) throws ValidationException {
+        Assertion assertion = samlResponse.getAssertions().get(0);
         Conditions conditions = assertion.getConditions();
         if (conditions == null) {
             return;
@@ -131,22 +131,22 @@ public class SAMLResponseValidator {
         }
     }
 
-    private void validateAssertion(Response credentials) throws ValidationException {
-        if (credentials.getAssertions().size() != 1) {
+    private void validateAssertion(Response samlResponse) throws ValidationException {
+        if (samlResponse.getAssertions().size() != 1) {
             throw new ValidationException("The response contains more than 1 assertion");
         }
-        Assertion assertion = credentials.getAssertions().get(0);
+        Assertion assertion = samlResponse.getAssertions().get(0);
         if (!assertion.getIssuer().getValue().equals(ssoEntityId)) {
             throw new ValidationException(ssoEntityId + " is the one that should be issuing the assertion");
         }
     }
 
-    private void validateCredentials(Response credentials) throws ValidationException {
-        new ResponseSchemaValidator().validate(credentials);
-        if (!credentials.getIssuer().getValue().equals(ssoEntityId)) {
+    private void validateCredentials(Response samlResponse) throws ValidationException {
+        new ResponseSchemaValidator().validate(samlResponse);
+        if (!samlResponse.getIssuer().getValue().equals(ssoEntityId)) {
             throw new ValidationException("The response is not from " + ssoEntityId);
         }
-        String statusCode = credentials.getStatus().getStatusCode().getValue();
+        String statusCode = samlResponse.getStatus().getStatusCode().getValue();
         if (!statusCode.equals(StatusCode.SUCCESS_URI)) {
             throw new ValidationException("Invalid status code: " + statusCode);
         }
