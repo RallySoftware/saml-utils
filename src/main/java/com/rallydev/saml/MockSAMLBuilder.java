@@ -8,19 +8,39 @@ import org.opensaml.saml2.core.Assertion;
 import org.opensaml.saml2.core.Attribute;
 import org.opensaml.saml2.core.AttributeStatement;
 import org.opensaml.saml2.core.AttributeValue;
+import org.opensaml.saml2.core.Audience;
+import org.opensaml.saml2.core.AudienceRestriction;
+import org.opensaml.saml2.core.AuthnContext;
+import org.opensaml.saml2.core.AuthnContextClassRef;
+import org.opensaml.saml2.core.AuthnStatement;
+import org.opensaml.saml2.core.Conditions;
 import org.opensaml.saml2.core.Issuer;
+import org.opensaml.saml2.core.NameID;
 import org.opensaml.saml2.core.NameIDType;
 import org.opensaml.saml2.core.Response;
 import org.opensaml.saml2.core.Status;
 import org.opensaml.saml2.core.StatusCode;
+import org.opensaml.saml2.core.Subject;
+import org.opensaml.saml2.core.SubjectConfirmation;
+import org.opensaml.saml2.core.SubjectConfirmationData;
 import org.opensaml.saml2.core.impl.AssertionBuilder;
 import org.opensaml.saml2.core.impl.AttributeBuilder;
 import org.opensaml.saml2.core.impl.AttributeStatementBuilder;
+import org.opensaml.saml2.core.impl.AudienceBuilder;
+import org.opensaml.saml2.core.impl.AudienceRestrictionBuilder;
+import org.opensaml.saml2.core.impl.AuthnContextBuilder;
+import org.opensaml.saml2.core.impl.AuthnContextClassRefBuilder;
+import org.opensaml.saml2.core.impl.AuthnStatementBuilder;
+import org.opensaml.saml2.core.impl.ConditionsBuilder;
 import org.opensaml.saml2.core.impl.IssuerBuilder;
+import org.opensaml.saml2.core.impl.NameIDBuilder;
 import org.opensaml.saml2.core.impl.ResponseBuilder;
 import org.opensaml.saml2.core.impl.ResponseMarshaller;
 import org.opensaml.saml2.core.impl.StatusBuilder;
 import org.opensaml.saml2.core.impl.StatusCodeBuilder;
+import org.opensaml.saml2.core.impl.SubjectBuilder;
+import org.opensaml.saml2.core.impl.SubjectConfirmationBuilder;
+import org.opensaml.saml2.core.impl.SubjectConfirmationDataBuilder;
 import org.opensaml.saml2.metadata.EntityDescriptor;
 import org.opensaml.saml2.metadata.IDPSSODescriptor;
 import org.opensaml.saml2.metadata.KeyDescriptor;
@@ -99,6 +119,9 @@ public class MockSAMLBuilder {
         assertion.getAttributeStatements().add(attributeStatement);
         assertion.setSignature(createSignature(privateKeyFile, certificateFile));
         assertion.setIssueInstant(DateTime.now());
+        assertion.setSubject(createSubject((String)attributesMap.get("email")));
+        assertion.setConditions(createConditions());
+        assertion.getAuthnStatements().add(createAuthenticationStatement());
 
         ResponseBuilder responseBuilder = new ResponseBuilder();
         Response response = responseBuilder.buildObject();
@@ -134,6 +157,55 @@ public class MockSAMLBuilder {
         }
 
         return Base64.encodeBytes(baos.toByteArray());
+    }
+
+    private static AuthnStatement createAuthenticationStatement() {
+        AuthnStatementBuilder authnStatementBuilder = new AuthnStatementBuilder();
+        AuthnStatement authnStatement = authnStatementBuilder.buildObject();
+        authnStatement.setAuthnInstant(new DateTime());
+        authnStatement.setSessionIndex("xCYHjWrk3XaxVMeVojVGQvgiq7k=F0nTxw==");
+        authnStatement.setSessionNotOnOrAfter(new DateTime().plusDays(1));
+        AuthnContextBuilder authnContextBuilder = new AuthnContextBuilder();
+        AuthnContext authnContext = authnContextBuilder.buildObject();
+        AuthnContextClassRefBuilder authnContextClassRefBuilder = new AuthnContextClassRefBuilder();
+        AuthnContextClassRef authnContextClassRef = authnContextClassRefBuilder.buildObject();
+        authnContextClassRef.setAuthnContextClassRef("urn:oasis:names:tc:SAML:2.0:ac:classes:Password");
+        authnContext.setAuthnContextClassRef(authnContextClassRef);
+        authnStatement.setAuthnContext(authnContext);
+        return authnStatement;
+    }
+
+    private static Conditions createConditions() {
+        ConditionsBuilder conditionsBuilder = new ConditionsBuilder();
+        Conditions conditions = conditionsBuilder.buildObject();
+        conditions.setNotBefore(new DateTime().minusDays(10));
+        conditions.setNotOnOrAfter(new DateTime().plusDays(1));
+        AudienceRestrictionBuilder audienceRestrictionBuilder = new AudienceRestrictionBuilder();
+        AudienceRestriction audienceRestriction = audienceRestrictionBuilder.buildObject();
+        AudienceBuilder audienceBuilder = new AudienceBuilder();
+        Audience audience = audienceBuilder.buildObject();
+        audience.setAudienceURI("sp_alm");
+        audienceRestriction.getAudiences().add(audience);
+        return conditions;
+    }
+
+    private static Subject createSubject(String username) {
+        SubjectBuilder subjectBuilder = new SubjectBuilder();
+        Subject subject = subjectBuilder.buildObject();
+        NameIDBuilder nameIDBuilder = new NameIDBuilder();
+        NameID nameId = nameIDBuilder.buildObject();
+        nameId.setFormat("urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified");
+        nameId.setValue(username);
+        subject.setNameID(nameId);
+        SubjectConfirmationBuilder subjectConfirmationBuilder = new SubjectConfirmationBuilder();
+        SubjectConfirmation subjectConfirmation = subjectConfirmationBuilder.buildObject();
+        subjectConfirmation.setMethod("urn:oasis:names:tc:SAML:2.0:cm:bearer");
+        SubjectConfirmationDataBuilder subjectConfirmationDataBuilder = new SubjectConfirmationDataBuilder();
+        SubjectConfirmationData subjectConfirmationData = subjectConfirmationDataBuilder.buildObject();
+        subjectConfirmationData.setNotOnOrAfter(new DateTime().plusDays(1));
+        subjectConfirmation.setSubjectConfirmationData(subjectConfirmationData);
+        subject.getSubjectConfirmations().add(subjectConfirmation);
+        return subject;
     }
 
     private static Issuer createIssuer(String name) {
