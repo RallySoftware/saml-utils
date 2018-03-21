@@ -1,6 +1,5 @@
 package com.rallydev.saml;
 
-import com.rallydev.saml.SAMLUtils;
 import org.joda.time.DateTime;
 import org.opensaml.Configuration;
 import org.opensaml.common.SAMLObjectBuilder;
@@ -96,6 +95,9 @@ public class MockSAMLBuilder {
         HashMap<String, String> attributes = new HashMap<>();
         attributes.put("email", "ue@test.com");
         attributes.put("subscription", "100");
+        attributes.put("spEntityId", "alm_sp");
+        attributes.put("target", "http://localhost:7001/j_saml_security_check");
+
         return createSAMLResponse(attributes, "sso_idp", "classpath:///saml.pkcs8", "classpath:///saml.crt", false);
     }
 
@@ -109,54 +111,57 @@ public class MockSAMLBuilder {
      * @param gzipped         when true the xml data will be gzipped before being Base64 encoded
      * @return A SMALResponse string suitable for feeding into a {@link SAMLResponseValidator#readAndValidateSAMLResponse(String)} method
      */
+
     public static String createSAMLResponse(Map<String, ?> attributesMap, String issuerName, String privateKeyFile, String certificateFile, boolean gzipped) {
-        AssertionBuilder assertionBuilder = new AssertionBuilder();
-        Assertion assertion = assertionBuilder.buildObject();
-        AttributeStatement attributeStatement = createAttributeStatement(attributesMap);
+    AssertionBuilder assertionBuilder = new AssertionBuilder();
+    Assertion assertion = assertionBuilder.buildObject();
+    AttributeStatement attributeStatement = createAttributeStatement(attributesMap);
 
-        assertion.setID("_" + UUID.randomUUID().toString());
-        assertion.setIssuer(createIssuer(issuerName));
-        assertion.getAttributeStatements().add(attributeStatement);
-        assertion.setSignature(createSignature(privateKeyFile, certificateFile));
-        assertion.setIssueInstant(DateTime.now());
-        assertion.setSubject(createSubject((String)attributesMap.get("email")));
-        assertion.setConditions(createConditions());
+    assertion.setID("_" + UUID.randomUUID().toString());
+    assertion.setIssuer(createIssuer(issuerName));
+    assertion.getAttributeStatements().add(attributeStatement);
+    assertion.setSignature(createSignature(privateKeyFile, certificateFile));
+    assertion.setIssueInstant(DateTime.now());
+    assertion.setSubject(createSubject(attributesMap));
+    assertion.setConditions(createConditions(attributesMap));
+    if(attributesMap.get("doNotCreateAuthnStatement") == null) {
         assertion.getAuthnStatements().add(createAuthenticationStatement());
+    }
 
-        ResponseBuilder responseBuilder = new ResponseBuilder();
-        Response response = responseBuilder.buildObject();
-        response.setStatus(createStatus(StatusCode.SUCCESS_URI));
-        response.setID("_" + UUID.randomUUID().toString());
-        response.setIssueInstant(new DateTime());
-        response.getAssertions().add(assertion);
-        response.setIssuer(createIssuer(issuerName));
+    ResponseBuilder responseBuilder = new ResponseBuilder();
+    Response response = responseBuilder.buildObject();
+    response.setStatus(createStatus(StatusCode.SUCCESS_URI));
+    response.setID("_" + UUID.randomUUID().toString());
+    response.setIssueInstant(new DateTime());
+    response.getAssertions().add(assertion);
+    response.setIssuer(createIssuer(issuerName));
 
-        ResponseMarshaller marshaller = new ResponseMarshaller();
-        Element element;
-        try {
-            element = marshaller.marshall(response);
-        } catch (MarshallingException e) {
-            throw new RuntimeException("error marshalling element", e);
+    ResponseMarshaller marshaller = new ResponseMarshaller();
+    Element element;
+    try {
+        element = marshaller.marshall(response);
+    } catch (MarshallingException e) {
+        throw new RuntimeException("error marshalling element", e);
+    }
+
+    try {
+        Signer.signObject(assertion.getSignature());
+    } catch (SignatureException e) {
+        throw new RuntimeException("error signing assertion", e);
+    }
+
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    if (gzipped) {
+        try (GZIPOutputStream gzip = new GZIPOutputStream(baos)) {
+            XMLHelper.writeNode(element, gzip);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
+    } else {
+        XMLHelper.writeNode(element, baos);
+    }
 
-        try {
-            Signer.signObject(assertion.getSignature());
-        } catch (SignatureException e) {
-            throw new RuntimeException("error signing assertion", e);
-        }
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        if (gzipped) {
-            try (GZIPOutputStream gzip = new GZIPOutputStream(baos)) {
-                XMLHelper.writeNode(element, gzip);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        } else {
-            XMLHelper.writeNode(element, baos);
-        }
-
-        return Base64.encodeBytes(baos.toByteArray());
+    return Base64.encodeBytes(baos.toByteArray());
     }
 
     private static AuthnStatement createAuthenticationStatement() {
@@ -175,37 +180,60 @@ public class MockSAMLBuilder {
         return authnStatement;
     }
 
-    private static Conditions createConditions() {
+    private static Conditions createConditions(Map<String, ?> attributeMap) {
         ConditionsBuilder conditionsBuilder = new ConditionsBuilder();
         Conditions conditions = conditionsBuilder.buildObject();
-        conditions.setNotBefore(new DateTime().minusDays(10));
-        conditions.setNotOnOrAfter(new DateTime().plusDays(1));
+        conditions.setNotBefore(getAssertionNotBefore(attributeMap));
+        conditions.setNotOnOrAfter(getAssertionNotOnOrAfterDate(attributeMap));
         AudienceRestrictionBuilder audienceRestrictionBuilder = new AudienceRestrictionBuilder();
         AudienceRestriction audienceRestriction = audienceRestrictionBuilder.buildObject();
         AudienceBuilder audienceBuilder = new AudienceBuilder();
         Audience audience = audienceBuilder.buildObject();
-        audience.setAudienceURI("sp_alm");
+        audience.setAudienceURI((String) attributeMap.get("spEntityId"));
         audienceRestriction.getAudiences().add(audience);
+        conditions.getAudienceRestrictions().add(audienceRestriction);
         return conditions;
     }
 
-    private static Subject createSubject(String username) {
+    private static DateTime getAssertionNotOnOrAfterDate(Map<String, ?> attributeMap) {
+        if(attributeMap.get("assertionNotOnOrAfterDate") != null) {
+            return (DateTime)attributeMap.get("assertionNotOnOrAfterDate");
+        }
+        return new DateTime().plusDays(1);
+    }
+
+    private static DateTime getAssertionNotBefore(Map<String, ?> attributeMap) {
+        if (attributeMap.get("assertionNotBeforeDate") != null) {
+            return (DateTime)attributeMap.get("assertionNotBeforeDate");
+        }
+        return new DateTime().minusDays(10);
+    }
+
+    private static Subject createSubject(Map<String, ?> attributeMap) {
         SubjectBuilder subjectBuilder = new SubjectBuilder();
         Subject subject = subjectBuilder.buildObject();
         NameIDBuilder nameIDBuilder = new NameIDBuilder();
         NameID nameId = nameIDBuilder.buildObject();
         nameId.setFormat("urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified");
-        nameId.setValue(username);
+        nameId.setValue((String)attributeMap.get("email"));
         subject.setNameID(nameId);
         SubjectConfirmationBuilder subjectConfirmationBuilder = new SubjectConfirmationBuilder();
         SubjectConfirmation subjectConfirmation = subjectConfirmationBuilder.buildObject();
         subjectConfirmation.setMethod("urn:oasis:names:tc:SAML:2.0:cm:bearer");
         SubjectConfirmationDataBuilder subjectConfirmationDataBuilder = new SubjectConfirmationDataBuilder();
         SubjectConfirmationData subjectConfirmationData = subjectConfirmationDataBuilder.buildObject();
-        subjectConfirmationData.setNotOnOrAfter(new DateTime().plusDays(1));
+        subjectConfirmationData.setNotOnOrAfter(getSubjectNotOnOrAfterDate(attributeMap));
+        subjectConfirmationData.setRecipient((String)attributeMap.get("target"));
         subjectConfirmation.setSubjectConfirmationData(subjectConfirmationData);
         subject.getSubjectConfirmations().add(subjectConfirmation);
         return subject;
+    }
+
+    private static DateTime getSubjectNotOnOrAfterDate(Map<String, ?> attributeMap) {
+        if(attributeMap.get("subjectNotOnOrAfterDate") != null) {
+            return (DateTime)attributeMap.get("subjectNotOnOrAfterDate");
+        }
+        return new DateTime().plusDays(1);
     }
 
     private static Issuer createIssuer(String name) {

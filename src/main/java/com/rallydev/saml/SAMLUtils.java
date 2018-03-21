@@ -1,6 +1,7 @@
 package com.rallydev.saml;
 
 import org.opensaml.DefaultBootstrap;
+import org.opensaml.common.SAMLException;
 import org.opensaml.saml2.core.Response;
 import org.opensaml.saml2.metadata.EntityDescriptor;
 import org.opensaml.saml2.metadata.IDPSSODescriptor;
@@ -71,8 +72,8 @@ public class SAMLUtils {
      * @throws IOException   On any file read error
      * @throws SamlException On any error parsing/validating the metadata
      */
-    public static SAMLResponseValidator createSAMLResponseValidator(File metadataFile) throws IOException, SamlException {
-        return createSAMLResponseValidator(loadSAMLMetadataFromFile(metadataFile));
+    public static SAMLResponseValidator createSAMLResponseValidator(File metadataFile, String spEntityId, String recepient) throws IOException, SamlException {
+        return createSAMLResponseValidator(loadSAMLMetadataFromFile(metadataFile), spEntityId, recepient);
     }
 
     /**
@@ -83,12 +84,12 @@ public class SAMLUtils {
      * responses.
      * @throws SamlException On any error parsing/validating the metadata
      */
-    public static SAMLResponseValidator createSAMLResponseValidator(byte[] metadataXmlBytes) throws SamlException {
+    public static SAMLResponseValidator createSAMLResponseValidator(byte[] metadataXmlBytes, String spEntityId, String recepient) throws SamlException {
         MetadataProvider metadataProvider = loadSAMLMetadata(new ByteArrayInputStream(metadataXmlBytes));
-        return createSAMLResponseValidator(metadataProvider);
+        return createSAMLResponseValidator(metadataProvider, spEntityId, recepient);
     }
 
-    private static SAMLResponseValidator createSAMLResponseValidator(MetadataProvider metadataProvider) throws SamlException {
+    private static SAMLResponseValidator createSAMLResponseValidator(MetadataProvider metadataProvider, String spEntityId, String recepient) throws SamlException {
         EntityDescriptor entityDescriptor;
         try {
             entityDescriptor = (EntityDescriptor) metadataProvider.getMetadata();
@@ -108,7 +109,7 @@ public class SAMLUtils {
 
         Credential credential = getFirstCredential(idpSsoDescriptor)
                 .orElseThrow(() -> new RuntimeException("no signing credential found in IDP metadata"));
-        return new SAMLResponseValidator(ssoEntityId, credential);
+        return new SAMLResponseValidator(ssoEntityId, credential, recepient, spEntityId);
     }
 
     public static MetadataProvider loadSAMLMetadataFromXMLString(String xmlMetadata) throws SamlException {
