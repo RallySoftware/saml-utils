@@ -3,9 +3,15 @@ package com.rallydev.saml;
 import org.joda.time.DateTime;
 import org.opensaml.common.SAMLObject;
 import org.opensaml.saml2.core.Assertion;
+import org.opensaml.saml2.core.Audience;
+import org.opensaml.saml2.core.AudienceRestriction;
+import org.opensaml.saml2.core.AuthnStatement;
 import org.opensaml.saml2.core.Conditions;
 import org.opensaml.saml2.core.Response;
 import org.opensaml.saml2.core.StatusCode;
+import org.opensaml.saml2.core.Subject;
+import org.opensaml.saml2.core.SubjectConfirmation;
+import org.opensaml.saml2.core.SubjectConfirmationData;
 import org.opensaml.saml2.core.validator.ResponseSchemaValidator;
 import org.opensaml.ws.message.decoder.MessageDecodingException;
 import org.opensaml.xml.Configuration;
@@ -22,6 +28,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.io.ByteArrayInputStream;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -31,6 +38,8 @@ public class SAMLResponseValidator {
 
     private final String ssoEntityId;
     private final Credential credential;
+    private final String spEntityId;
+    private final String recepient;
 
     /**
      * Create a new validator for the given entity and credential.
@@ -41,6 +50,15 @@ public class SAMLResponseValidator {
     public SAMLResponseValidator(String ssoEntityId, Credential credential) {
         this.ssoEntityId = ssoEntityId;
         this.credential = credential;
+        this.recepient = "http://localhost:7001/j_saml_security_check";
+        this.spEntityId = "alm_sp";
+    }
+
+    public SAMLResponseValidator(String ssoEntityId, Credential credential, String recepient, String spEntityId) {
+        this.ssoEntityId = ssoEntityId;
+        this.credential = credential;
+        this.spEntityId = spEntityId;
+        this.recepient = recepient;
     }
 
     /**
@@ -87,6 +105,45 @@ public class SAMLResponseValidator {
         validateSignatures(samlResponse);
         validateAssertion(samlResponse);
         validateDateInAssertion(samlResponse);
+        validateAudience(samlResponse);
+        validateAuthnStatementExists(samlResponse);
+        validateSubjectConfirmationData(samlResponse);
+    }
+
+    private void validateSubjectConfirmationData(Response samlResponse) throws ValidationException {
+        Assertion assertion = samlResponse.getAssertions().get(0);
+        Subject subject = assertion.getSubject();
+        SubjectConfirmation subjectConfirmation = subject.getSubjectConfirmations().get(0);
+        SubjectConfirmationData data = subjectConfirmation.getSubjectConfirmationData();
+        DateTime now = DateTime.now();
+
+        if (data.getNotOnOrAfter() != null && now.isAfter(data.getNotOnOrAfter())) {
+            throw new ValidationException("The assertion cannot be used after  " + data.getNotOnOrAfter().toString());
+        }
+
+        if(!data.getRecipient().equals(recepient)) {
+            throw new ValidationException("The assertion cannot is from another recepient : " + data.getRecipient());
+        }
+
+    }
+
+    private void validateAuthnStatementExists(Response samlResponse) throws ValidationException{
+        Assertion assertion = samlResponse.getAssertions().get(0);
+        List<AuthnStatement> authnStatements = assertion.getAuthnStatements();
+        if(authnStatements.size() <= 0) {
+            throw new ValidationException("there must be atleast one Authn statement in SAML response");
+        }
+
+    }
+
+    private void validateAudience(Response samlResponse) throws ValidationException{
+        Assertion assertion = samlResponse.getAssertions().get(0);
+        Conditions conditions = assertion.getConditions();
+        AudienceRestriction audienceRestriction = conditions.getAudienceRestrictions().get(0);
+        Audience audience = audienceRestriction.getAudiences().get(0);
+        if(audience == null || !audience.getAudienceURI().equals(spEntityId)) {
+            throw new ValidationException("the SAML response is from a different partnership");
+        }
     }
 
     private void validateSignatures(SAMLObject samlResponse) throws ValidationException {
