@@ -6,7 +6,6 @@ apply plugin: "com.github.johnrengelman.shadow"
 apply plugin: 'maven-publish'
 
 
-ext.releaseName = System.getenv('RELEASE_NAME') ?: 'master'
 
 ext.buildNumber = System.getenv('BUILD_NUMBER') ?: "SNAPSHOT-${getDate()}"
 
@@ -14,16 +13,16 @@ mainClassName = 'com.ca.saml.SAMLUtils'
 
 shadowJar {
     baseName = 'saml-utils'
-    version = "${releaseName}-${buildNumber}"
+    version = "${buildNumber}"
 }
 
 publishing {
     publications {
         SAMLJar(MavenPublication) {
-            artifact "build/libs/saml-utils-" + "${releaseName}-${buildNumber}" + "-all.jar"
+            artifact "build/libs/saml-utils-" + "${buildNumber}" + "-all.jar"
             group = 'com.rallydev'
             artifactId = 'saml-utils-jar'
-            version = "${releaseName}-${buildNumber}"
+            version = "${buildNumber}"
         }
     }
 
