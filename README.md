@@ -24,11 +24,15 @@ Map<String, String> parsedAttributes = SAMLUtils.getAttributes(response);
 ```
 ### Publishing artifact
 
+Look for build number under 
+http://repo-depot.f4tech.com/artifactory/rally-maven/com/rallydev/saml-utils-jar/
+Increment by 1
+
 ```$xslt
 
 gw clean
-gw shadowJar
-gw publishSAMLJarPublicationToMavenRepository
+BUILD_NUMBER=<> gw shadowJar
+BUILD_NUMBER=<> gw publishSAMLJarPublicationToMavenRepository
 
 ```
 
