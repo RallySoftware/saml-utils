@@ -99,7 +99,7 @@ public class SAMLResponseValidator {
      * @param samlResponse The SAML response to validate
      * @throws ValidationException
      */
-    public void validate(Response samlResponse) throws ValidationException {
+    private void validate(Response samlResponse) throws ValidationException {
         Objects.requireNonNull(samlResponse);
         validateCredentials(samlResponse);
         validateSignatures(samlResponse);
