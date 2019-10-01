@@ -3,6 +3,7 @@ package com.rallydev.saml;
 import org.opensaml.DefaultBootstrap;
 import org.opensaml.common.SAMLException;
 import org.opensaml.saml2.core.Response;
+import org.opensaml.saml2.core.AuthnRequest;
 import org.opensaml.saml2.metadata.EntityDescriptor;
 import org.opensaml.saml2.metadata.IDPSSODescriptor;
 import org.opensaml.saml2.metadata.KeyDescriptor;
@@ -10,6 +11,7 @@ import org.opensaml.saml2.metadata.provider.DOMMetadataProvider;
 import org.opensaml.saml2.metadata.provider.MetadataProvider;
 import org.opensaml.saml2.metadata.provider.MetadataProviderException;
 import org.opensaml.xml.Configuration;
+import org.opensaml.xml.io.Marshaller;
 import org.opensaml.xml.XMLObject;
 import org.opensaml.xml.parse.XMLParserException;
 import org.opensaml.xml.security.credential.Credential;
@@ -17,6 +19,8 @@ import org.opensaml.xml.security.credential.UsageType;
 import org.opensaml.xml.security.keyinfo.KeyInfoHelper;
 import org.opensaml.xml.security.x509.BasicX509Credential;
 import org.opensaml.xml.signature.KeyInfoType;
+import org.opensaml.xml.util.Base64;
+import org.opensaml.xml.util.XMLHelper;
 import org.w3c.dom.Document;
 
 import javax.xml.transform.OutputKeys;
@@ -32,19 +36,23 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
+import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.zip.Deflater;
+import java.util.zip.DeflaterOutputStream;
 
 /**
  * Static SAML utilities.
@@ -238,5 +246,33 @@ public class SAMLUtils {
     }
 
     private SAMLUtils() {
+    }
+
+    // This method borrowed from
+    // https://github.com/sunieldalal/loginapp/blob/master/src/main/java/com/slabs/login/service/login/LoginServiceImpl.java
+
+    public static String generateSAMLRequestParameterValue(String assertionConsumerServiceUrl, String issuerId) throws SamlException {
+        try {
+            AuthnRequest authRequest = AuthNRequestBuilder.buildAuthenticationRequest(assertionConsumerServiceUrl, issuerId);
+            Marshaller marshaller = org.opensaml.Configuration.getMarshallerFactory().getMarshaller(authRequest);
+            org.w3c.dom.Element authDOM = marshaller.marshall(authRequest);
+            StringWriter rspWrt = new StringWriter();
+            XMLHelper.writeNode(authDOM, rspWrt);
+            String messageXML = rspWrt.toString();
+
+            Deflater deflater = new Deflater(Deflater.DEFLATED, true);
+            try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                 DeflaterOutputStream deflaterOutputStream = new DeflaterOutputStream(byteArrayOutputStream, deflater)) {
+                deflaterOutputStream.write(messageXML.getBytes());
+                // we must close  deflaterOutputStream here else byteArrayOutputStream.toByteArray() returns empty array
+                deflaterOutputStream.close();
+                String samlRequest = Base64.encodeBytes(byteArrayOutputStream.toByteArray(), Base64.DONT_BREAK_LINES);
+                return URLEncoder.encode(samlRequest, "UTF-8");
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new SamlException("Failed to generate SAML Request", ex);
+        }
     }
 }
