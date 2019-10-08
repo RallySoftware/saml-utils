@@ -2,6 +2,12 @@ package com.rallydev.saml;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class SAMLTestUtils {
 
@@ -18,4 +24,33 @@ public class SAMLTestUtils {
         attributeDefs.put("subscription", "urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified");
         return attributeDefs;
     }
+
+    public static String getResourceFileContentsAsString(String resourceFileName) throws IOException {
+        Class clazz = SAMLResponseValidator.class;
+        InputStream inputStream = clazz.getResourceAsStream(resourceFileName);
+        return readFromInputStream(inputStream);
+    }
+
+    private static String readFromInputStream(InputStream inputStream)
+            throws IOException {
+        StringBuilder resultStringBuilder = new StringBuilder();
+        try (BufferedReader br
+                     = new BufferedReader(new InputStreamReader(inputStream))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                resultStringBuilder.append(line).append("\n");
+            }
+        }
+        return resultStringBuilder.toString();
+    }
+
+    public static String getParamFromUrl(String urlString, String paramName) {
+        Pattern regexPattern = Pattern.compile("(&?)" + paramName + "=[^&]*");
+        Matcher matcher = regexPattern.matcher(urlString);
+        if (matcher.find()) {
+            return matcher.group(0);
+        }
+        return null;
+    }
+
 }
