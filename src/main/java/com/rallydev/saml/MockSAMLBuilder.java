@@ -91,12 +91,15 @@ import static org.opensaml.xml.security.keyinfo.KeyInfoHelper.buildX509Certifica
  */
 public class MockSAMLBuilder {
 
+    private static final String SP_ENTITY_ID_ALM = "alm_sp";
+    private static final String SP_ENTITY_ID_ZUUL = "sp_zuul";
+
     public static String createDefaultSAMLResponse() {
         HashMap<String, String> attributes = new HashMap<>();
         attributes.put("email", "ue@test.com");
         attributes.put("subscription", "100");
-        attributes.put("spEntityId", "alm_sp");
-        attributes.put("target", "http://localhost:7001/j_saml_security_check");
+        attributes.put("spEntityId", SP_ENTITY_ID_ALM);
+        attributes.put("target", SAMLUtils.DEV_ALM_STRIPPED_SAML_RESPONSE_ACS_URL);
 
         return createSAMLResponse(attributes, "sso_idp", "classpath:///saml.pkcs8", "classpath:///saml.crt", false);
     }

@@ -12,8 +12,8 @@ public class AuthNRequestBuilderTest extends Assert {
     @Test
     public void buildAuthnRequestAndConvertToParam() throws SamlException
     {
-        String assertionConsumerServiceUrl = "http://localhost:7001/slm/j_saml_security_check";
-        String issuerId = "alm_sp";
+        String assertionConsumerServiceUrl = SAMLUtils.DEV_ALM_UNSTRIPPED_SAML_RESPONSE_ACS_URL;
+        String issuerId = SAMLUtils.SP_ENTITY_ID_ALM;
         String samlRequestParam = SAMLUtils.generateSAMLRequestParameterValue(assertionConsumerServiceUrl, issuerId);
         assertTrue(samlRequestParam != null);
         assertTrue(!samlRequestParam.isEmpty());

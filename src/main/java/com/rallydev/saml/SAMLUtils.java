@@ -1,7 +1,6 @@
 package com.rallydev.saml;
 
 import org.opensaml.DefaultBootstrap;
-import org.opensaml.common.SAMLException;
 import org.opensaml.saml2.core.Response;
 import org.opensaml.saml2.core.AuthnRequest;
 import org.opensaml.saml2.metadata.EntityDescriptor;
@@ -58,6 +57,18 @@ import java.util.zip.DeflaterOutputStream;
  * Static SAML utilities.
  */
 public class SAMLUtils {
+
+    public static final String SP_ENTITY_ID_ALM = "alm_sp";
+    public static final String SP_ENTITY_ID_ZUUL = "sp_zuul";
+
+    public static final String SAML_REQUEST_PARAM_NAME = "SAMLRequest";
+
+    public static final String DEV_ZUUL_SAML_RESPONSE_ACS_URL = "http://localhost:3000/login/sso";
+
+    public static final String DEV_ALM_STRIPPED_OPEN_TOKEN_ACS_URL = "http://localhost:7001/j_sso_security_check";
+
+    public static final String DEV_ALM_STRIPPED_SAML_RESPONSE_ACS_URL = "http://localhost:7001/j_saml_security_check";
+    public static final String DEV_ALM_UNSTRIPPED_SAML_RESPONSE_ACS_URL = "http://localhost:7001/slm/j_saml_security_check";
 
     private static final AtomicBoolean initialized = new AtomicBoolean(false);
 
@@ -246,6 +257,36 @@ public class SAMLUtils {
     }
 
     private SAMLUtils() {
+    }
+
+    public static String modifyRedirectUrlForDevTestSSOFederationServer(String redirectUrl, String assertionConsumerServiceURL, String spEntityId, boolean useDevTestSSOFederationServer) {
+        if (!useDevTestSSOFederationServer) {
+            return redirectUrl;
+        }
+
+        try {
+            init();
+            String samlRequestParam = SAMLUtils.generateSAMLRequestParameterValue(assertionConsumerServiceURL, spEntityId);
+            redirectUrl = addParamToUrl(redirectUrl, SAML_REQUEST_PARAM_NAME + "=" + samlRequestParam);
+        } catch (Exception ex) {
+            ex.printStackTrace(System.out);
+            // if failed to modify redirectUrl, just return unmodified url
+        }
+
+        return redirectUrl;
+    }
+
+    /**
+     * Add param to URL, respecting '?' & '&' rules
+     * @param existingUrl
+     * @param queryParam Remember to encode the right hand side of the '=' in the param, if necessary!  (RequestUtils.urlEncode)
+     */
+    public static String addParamToUrl(String existingUrl, String queryParam) {
+        if (queryParam == null || queryParam.length() == 0) {
+            return existingUrl;
+        }
+        String separator = existingUrl.contains("?") ? "&" : "?";
+        return existingUrl + separator + queryParam;
     }
 
     // This method borrowed from

@@ -50,8 +50,8 @@ public class SAMLResponseValidator {
     public SAMLResponseValidator(String ssoEntityId, Credential credential) {
         this.ssoEntityId = ssoEntityId;
         this.credential = credential;
-        this.recepient = "http://localhost:7001/j_saml_security_check";
-        this.spEntityId = "alm_sp";
+        this.recepient = SAMLUtils.DEV_ALM_STRIPPED_SAML_RESPONSE_ACS_URL;
+        this.spEntityId = SAMLUtils.SP_ENTITY_ID_ALM;
     }
 
     public SAMLResponseValidator(String ssoEntityId, Credential credential, String recepient, String spEntityId) {
@@ -72,6 +72,21 @@ public class SAMLResponseValidator {
      * @throws ValidationException      for any validation errors
      */
     public Response readAndValidateSAMLResponse(String base64Parameter) throws MessageDecodingException, ValidationException {
+        return readAndValidateSAMLResponse(base64Parameter, true);
+    }
+
+    /**
+     * Decode, parse, and validate the given base64 encoded SAMLResponse. GZIP inflating will be handled automatically
+     * by the underlying opensaml library.
+     *
+     * @param base64Parameter The string parameter to validate (typically the SAMLResponse query parameter from the servlet
+     *                        request)
+     * @param validateDates   If true, validate date limits on SAMLResponse, else don't validate them
+     * @return The parsed {@link Response} object
+     * @throws MessageDecodingException for any issues decoding/inflating/parsing the SAML response data
+     * @throws ValidationException      for any validation errors
+     */
+    public Response readAndValidateSAMLResponse(String base64Parameter, boolean validateDates) throws MessageDecodingException, ValidationException {
         Objects.requireNonNull(base64Parameter);
         byte[] decode = Base64.decode(base64Parameter);
         try {
@@ -82,7 +97,7 @@ public class SAMLResponseValidator {
                 throw new MessageDecodingException("Unable to un-marshall message, no un-marshaller registered for message element " + XMLHelper.getNodeQName(messageElem));
             }
             Response response = (Response) unmarshaller.unmarshall(messageElem);
-            validate(response);
+            validate(response, validateDates);
             return response;
         } catch (XMLParserException e) {
             throw new MessageDecodingException("Encountered error parsing message into its DOM representation", e);
@@ -99,30 +114,30 @@ public class SAMLResponseValidator {
      * @param samlResponse The SAML response to validate
      * @throws ValidationException
      */
-    private void validate(Response samlResponse) throws ValidationException {
+    private void validate(Response samlResponse, boolean validateDates) throws ValidationException {
         Objects.requireNonNull(samlResponse);
         validateCredentials(samlResponse);
         validateSignatures(samlResponse);
         validateAssertion(samlResponse);
-        validateDateInAssertion(samlResponse);
+        validateDateInAssertion(samlResponse, validateDates);
         validateAudience(samlResponse);
         validateAuthnStatementExists(samlResponse);
-        validateSubjectConfirmationData(samlResponse);
+        validateSubjectConfirmationData(samlResponse, validateDates);
     }
 
-    private void validateSubjectConfirmationData(Response samlResponse) throws ValidationException {
+    private void validateSubjectConfirmationData(Response samlResponse, boolean validateDates) throws ValidationException {
         Assertion assertion = samlResponse.getAssertions().get(0);
         Subject subject = assertion.getSubject();
         SubjectConfirmation subjectConfirmation = subject.getSubjectConfirmations().get(0);
         SubjectConfirmationData data = subjectConfirmation.getSubjectConfirmationData();
         DateTime now = DateTime.now();
 
-        if (data.getNotOnOrAfter() != null && now.isAfter(data.getNotOnOrAfter())) {
+        if (validateDates && data.getNotOnOrAfter() != null && now.isAfter(data.getNotOnOrAfter())) {
             throw new ValidationException("The assertion cannot be used after  " + data.getNotOnOrAfter().toString());
         }
 
         if(!data.getRecipient().equals(recepient)) {
-            throw new ValidationException("The assertion cannot is from another recepient : " + data.getRecipient());
+            throw new ValidationException("The assertion cannot is from another recipient : " + data.getRecipient());
         }
 
     }
@@ -173,17 +188,17 @@ public class SAMLResponseValidator {
         signatureValidator.validate(signature);
     }
 
-    private void validateDateInAssertion(Response samlResponse) throws ValidationException {
+    private void validateDateInAssertion(Response samlResponse, boolean validateDates) throws ValidationException {
         Assertion assertion = samlResponse.getAssertions().get(0);
         Conditions conditions = assertion.getConditions();
         if (conditions == null) {
             return;
         }
         DateTime now = DateTime.now();
-        if (conditions.getNotBefore() != null && now.isBefore(conditions.getNotBefore())) {
+        if (validateDates && conditions.getNotBefore() != null && now.isBefore(conditions.getNotBefore())) {
             throw new ValidationException("The assertion cannot be used before " + conditions.getNotBefore().toString());
         }
-        if (conditions.getNotOnOrAfter() != null && now.isAfter(conditions.getNotOnOrAfter())) {
+        if (validateDates && conditions.getNotOnOrAfter() != null && now.isAfter(conditions.getNotOnOrAfter())) {
             throw new ValidationException("The assertion cannot be used after  " + conditions.getNotOnOrAfter().toString());
         }
     }
