@@ -188,33 +188,46 @@ public class SAMLUtils {
     }
 
     public static byte[] loadResource(String locationUri) {
+        System.out.println(String.format("loadResource: locationUri: %s", locationUri));
         try {
-            URI uri = URI.create(locationUri);
-            String scheme = uri.getScheme();
-            if (Objects.equals(scheme, "classpath")) {
-                return readClasspathResource(uri.getPath());
-            } else {
-                return Files.readAllBytes(new File(uri.getPath()).toPath());
+            try {
+                URI uri = URI.create(locationUri);
+                String scheme = uri.getScheme();
+                if (Objects.equals(scheme, "classpath")) {
+                    return readClasspathResource(uri.getPath());
+                } else {
+                    return Files.readAllBytes(new File(uri.getPath()).toPath());
+                }
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
             }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+        } catch (Throwable t) {
+            t.printStackTrace(System.out);
+            throw t;
         }
+
     }
 
     public static byte[] readClasspathResource(String resource) {
-        while (resource.startsWith("/")) {
-            resource = resource.substring(1);
-        }
-        try (InputStream is = SAMLUtils.class.getClassLoader().getResourceAsStream(resource)) {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            byte[] buf = new byte[1024];
-            int read;
-            while ((read = is.read(buf)) >= 0) {
-                baos.write(buf, 0, read);
+        System.out.println(String.format("readClasspathResource: resource: %s", resource));
+        try {
+            while (resource.startsWith("/")) {
+                resource = resource.substring(1);
             }
-            return baos.toByteArray();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            try (InputStream is = SAMLUtils.class.getClassLoader().getResourceAsStream(resource)) {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                byte[] buf = new byte[1024];
+                int read;
+                while ((read = is.read(buf)) >= 0) {
+                    baos.write(buf, 0, read);
+                }
+                return baos.toByteArray();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        } catch (Throwable t) {
+            t.printStackTrace(System.out);
+            throw t;
         }
     }
 

@@ -66,7 +66,7 @@ public class SAMLResponseValidatorTest extends Assert {
                 SAMLUtils.SP_ENTITY_ID_ALM,
                 SAMLUtils.DEV_ALM_UNSTRIPPED_SAML_RESPONSE_ACS_URL,
                 "ssouser1@test.com",
-                "100",
+                "313",
                 "/www.okta.com-exk1fm686jV32ywNB357-metadata.xml",
                 "/www.okta.com-exk1fm686jV32ywNB357-samlResponse.txt");
     }
