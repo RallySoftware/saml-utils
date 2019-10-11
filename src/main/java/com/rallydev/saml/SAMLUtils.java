@@ -188,7 +188,6 @@ public class SAMLUtils {
     }
 
     public static byte[] loadResource(String locationUri) {
-        System.out.println(String.format("loadResource: locationUri: %s", locationUri));
         try {
             try {
                 URI uri = URI.create(locationUri);
@@ -202,6 +201,9 @@ public class SAMLUtils {
                 throw new UncheckedIOException(e);
             }
         } catch (Throwable t) {
+            // When Zuul calls this method and it fails with an exception, there is no indication of this in Zuul.
+            // After spending hours trying to track this down with print statements in Zuul,
+            // I added this code to print exceptions to stdout before throwing them to the caller.
             t.printStackTrace(System.out);
             throw t;
         }
@@ -209,7 +211,6 @@ public class SAMLUtils {
     }
 
     public static byte[] readClasspathResource(String resource) {
-        System.out.println(String.format("readClasspathResource: resource: %s", resource));
         try {
             while (resource.startsWith("/")) {
                 resource = resource.substring(1);
@@ -226,6 +227,9 @@ public class SAMLUtils {
                 throw new UncheckedIOException(e);
             }
         } catch (Throwable t) {
+            // When Zuul calls this method and it fails with an exception, there is no indication of this in Zuul.
+            // After spending hours trying to track this down with print statements in Zuul,
+            // I added this code to print exceptions to stdout before throwing them to the caller.
             t.printStackTrace(System.out);
             throw t;
         }
