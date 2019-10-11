@@ -189,49 +189,32 @@ public class SAMLUtils {
 
     public static byte[] loadResource(String locationUri) {
         try {
-            try {
-                URI uri = URI.create(locationUri);
-                String scheme = uri.getScheme();
-                if (Objects.equals(scheme, "classpath")) {
-                    return readClasspathResource(uri.getPath());
-                } else {
-                    return Files.readAllBytes(new File(uri.getPath()).toPath());
-                }
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
+            URI uri = URI.create(locationUri);
+            String scheme = uri.getScheme();
+            if (Objects.equals(scheme, "classpath")) {
+                return readClasspathResource(uri.getPath());
+            } else {
+                return Files.readAllBytes(new File(uri.getPath()).toPath());
             }
-        } catch (Throwable t) {
-            // When Zuul calls this method and it fails with an exception, there is no indication of this in Zuul.
-            // After spending hours trying to track this down with print statements in Zuul,
-            // I added this code to print exceptions to stdout before throwing them to the caller.
-            t.printStackTrace(System.out);
-            throw t;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
-
     }
 
     public static byte[] readClasspathResource(String resource) {
-        try {
-            while (resource.startsWith("/")) {
-                resource = resource.substring(1);
+        while (resource.startsWith("/")) {
+            resource = resource.substring(1);
+        }
+        try (InputStream is = SAMLUtils.class.getClassLoader().getResourceAsStream(resource)) {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            byte[] buf = new byte[1024];
+            int read;
+            while ((read = is.read(buf)) >= 0) {
+                baos.write(buf, 0, read);
             }
-            try (InputStream is = SAMLUtils.class.getClassLoader().getResourceAsStream(resource)) {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                byte[] buf = new byte[1024];
-                int read;
-                while ((read = is.read(buf)) >= 0) {
-                    baos.write(buf, 0, read);
-                }
-                return baos.toByteArray();
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        } catch (Throwable t) {
-            // When Zuul calls this method and it fails with an exception, there is no indication of this in Zuul.
-            // After spending hours trying to track this down with print statements in Zuul,
-            // I added this code to print exceptions to stdout before throwing them to the caller.
-            t.printStackTrace(System.out);
-            throw t;
+            return baos.toByteArray();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 
