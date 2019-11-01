@@ -24,6 +24,8 @@ Map<String, String> parsedAttributes = SAMLUtils.getAttributes(response);
 ```
 ### Publishing artifact
 
+NOTE: At present, there is no Continuous Integration (CI) pipeline set up for this library.
+
 Look for build number under 
 http://repo-depot.f4tech.com/artifactory/rally-maven/com/rallydev/saml-utils-jar/
 Increment by 1
