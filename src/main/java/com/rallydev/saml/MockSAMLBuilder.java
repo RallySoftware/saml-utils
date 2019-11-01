@@ -70,8 +70,11 @@ import org.w3c.dom.Element;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.URI;
+import java.nio.file.Files;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.cert.CertificateException;
@@ -81,6 +84,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.zip.GZIPOutputStream;
 
@@ -316,7 +320,7 @@ public class MockSAMLBuilder {
 
     public static PrivateKey loadPrivateKey(String locationUri) throws InvalidKeySpecException {
         try {
-            byte[] buf = SAMLUtils.loadResource(locationUri);
+            byte[] buf = loadResource(locationUri);
             PKCS8EncodedKeySpec kspec = new PKCS8EncodedKeySpec(buf);
             return KeyFactory.getInstance("RSA").generatePrivate(kspec);
         } catch (Exception e) {
@@ -327,7 +331,7 @@ public class MockSAMLBuilder {
     public static X509Certificate loadPublicKey(String locationUri) throws CertificateException {
         try {
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
-            byte[] bytes = SAMLUtils.loadResource(locationUri);
+            byte[] bytes = loadResource(locationUri);
             return (X509Certificate) cf.generateCertificate(new ByteArrayInputStream(bytes));
         } catch (Exception e) {
             throw new CertificateException("Unable to retrieve public key", e);
@@ -435,4 +439,17 @@ public class MockSAMLBuilder {
         }
     }
 
+    private static byte[] loadResource(String locationUri) {
+        try {
+            URI uri = URI.create(locationUri);
+            String scheme = uri.getScheme();
+            if (Objects.equals(scheme, "classpath")) {
+                return SAMLTestUtils.readClasspathResource(uri.getPath());
+            } else {
+                return Files.readAllBytes(new File(uri.getPath()).toPath());
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
 }

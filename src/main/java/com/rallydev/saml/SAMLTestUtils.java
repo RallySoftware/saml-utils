@@ -1,11 +1,13 @@
 package com.rallydev.saml;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -51,6 +53,23 @@ public class SAMLTestUtils {
             return matcher.group(0);
         }
         return null;
+    }
+
+    public static byte[] readClasspathResource(String resource) {
+        while (resource.startsWith("/")) {
+            resource = resource.substring(1);
+        }
+        try (InputStream is = SAMLUtils.class.getClassLoader().getResourceAsStream(resource)) {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            byte[] buf = new byte[1024];
+            int read;
+            while ((read = is.read(buf)) >= 0) {
+                baos.write(buf, 0, read);
+            }
+            return baos.toByteArray();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
 }

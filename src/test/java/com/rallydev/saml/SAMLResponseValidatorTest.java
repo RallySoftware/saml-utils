@@ -131,13 +131,13 @@ public class SAMLResponseValidatorTest extends Assert {
         Map<String, String> attributes = getDefaultAttributes();
         String responseString = createSAMLResponse(attributes, "sso_idp", "classpath:///saml.pkcs8", "classpath:///saml.crt", false);
 
-        SAMLResponseValidator validator = SAMLUtils.createSAMLResponseValidator(SAMLUtils.readClasspathResource("sample_metadata.xml"), SAMLUtils.SP_ENTITY_ID_ALM, SAMLUtils.DEV_ALM_STRIPPED_SAML_RESPONSE_ACS_URL);
+        SAMLResponseValidator validator = SAMLUtils.createSAMLResponseValidator(SAMLTestUtils.readClasspathResource("sample_metadata.xml"), SAMLUtils.SP_ENTITY_ID_ALM, SAMLUtils.DEV_ALM_STRIPPED_SAML_RESPONSE_ACS_URL);
         assertThrows(ValidationException.class, () -> validator.readAndValidateSAMLResponse(responseString));
     }
 
     @Test
     public void badResponseCausesException() throws FileNotFoundException, SamlException {
-        SAMLResponseValidator validator = SAMLUtils.createSAMLResponseValidator(SAMLUtils.readClasspathResource("sample_metadata.xml"), SAMLUtils.SP_ENTITY_ID_ALM, SAMLUtils.DEV_ALM_STRIPPED_SAML_RESPONSE_ACS_URL);
+        SAMLResponseValidator validator = SAMLUtils.createSAMLResponseValidator(SAMLTestUtils.readClasspathResource("sample_metadata.xml"), SAMLUtils.SP_ENTITY_ID_ALM, SAMLUtils.DEV_ALM_STRIPPED_SAML_RESPONSE_ACS_URL);
         assertThrows(() -> validator.readAndValidateSAMLResponse("toast"));
         assertThrows(() -> validator.readAndValidateSAMLResponse(null));
     }
@@ -176,7 +176,7 @@ public class SAMLResponseValidatorTest extends Assert {
     public void assertThrowsErrorWithAttributes(String key, Object value) throws SamlException{
         Map attributes = getDefaultAttributes();
         attributes.put(key, value);
-        SAMLResponseValidator validator = SAMLUtils.createSAMLResponseValidator(SAMLUtils.readClasspathResource("sample_metadata.xml"), SAMLUtils.SP_ENTITY_ID_ALM, SAMLUtils.DEV_ALM_STRIPPED_SAML_RESPONSE_ACS_URL);
+        SAMLResponseValidator validator = SAMLUtils.createSAMLResponseValidator(SAMLTestUtils.readClasspathResource("sample_metadata.xml"), SAMLUtils.SP_ENTITY_ID_ALM, SAMLUtils.DEV_ALM_STRIPPED_SAML_RESPONSE_ACS_URL);
         String responseString = createSAMLResponse(attributes, "sso_idp", "classpath:///saml.pkcs8", "classpath:///saml.crt", false);
         assertThrows(() -> validator.readAndValidateSAMLResponse(responseString));
     }

@@ -36,11 +36,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.StringWriter;
-import java.io.UncheckedIOException;
-import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
@@ -185,37 +182,6 @@ public class SAMLUtils {
         c.setPublicKey(certificate.getPublicKey());
         c.setCRLs(Collections.emptyList());
         return c;
-    }
-
-    public static byte[] loadResource(String locationUri) {
-        try {
-            URI uri = URI.create(locationUri);
-            String scheme = uri.getScheme();
-            if (Objects.equals(scheme, "classpath")) {
-                return readClasspathResource(uri.getPath());
-            } else {
-                return Files.readAllBytes(new File(uri.getPath()).toPath());
-            }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    public static byte[] readClasspathResource(String resource) {
-        while (resource.startsWith("/")) {
-            resource = resource.substring(1);
-        }
-        try (InputStream is = SAMLUtils.class.getClassLoader().getResourceAsStream(resource)) {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            byte[] buf = new byte[1024];
-            int read;
-            while ((read = is.read(buf)) >= 0) {
-                baos.write(buf, 0, read);
-            }
-            return baos.toByteArray();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
     }
 
     /**

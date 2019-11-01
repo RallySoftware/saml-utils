@@ -137,7 +137,7 @@ public class SAMLResponseValidator {
         }
 
         if(!data.getRecipient().equals(recepient)) {
-            throw new ValidationException("The assertion cannot is from another recipient : " + data.getRecipient());
+            throw new ValidationException("The assertion cannot be for another recipient : " + data.getRecipient());
         }
 
     }
@@ -146,7 +146,7 @@ public class SAMLResponseValidator {
         Assertion assertion = samlResponse.getAssertions().get(0);
         List<AuthnStatement> authnStatements = assertion.getAuthnStatements();
         if(authnStatements.size() <= 0) {
-            throw new ValidationException("there must be atleast one Authn statement in SAML response");
+            throw new ValidationException("there must be at least one Authn statement in SAML response");
         }
 
     }
