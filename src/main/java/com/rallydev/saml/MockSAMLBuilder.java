@@ -100,10 +100,8 @@ public class MockSAMLBuilder {
 
     public static String createDefaultSAMLResponse() {
         HashMap<String, String> attributes = new HashMap<>();
-        attributes.put("email", "ue@test.com");
-        attributes.put("subscription", "100");
-        attributes.put("spEntityId", SP_ENTITY_ID_ALM);
-        attributes.put("target", SAMLUtils.DEV_ALM_STRIPPED_SAML_RESPONSE_ACS_URL);
+        attributes.put(SAMLResponseValidator.EMAIL_REQUIRED_SAML_RESPONSE_ASSERTION, "ue@test.com");
+        attributes.put(SAMLResponseValidator.SUBSCRIPTION_REQUIRED_SAML_RESPONSE_ASSERTION, "100");
 
         return createSAMLResponse(attributes, "sso_idp", "classpath:///saml.pkcs8", "classpath:///saml.crt", false);
     }
@@ -193,12 +191,6 @@ public class MockSAMLBuilder {
         conditions.setNotBefore(getAssertionNotBefore(attributeMap));
         conditions.setNotOnOrAfter(getAssertionNotOnOrAfterDate(attributeMap));
         AudienceRestrictionBuilder audienceRestrictionBuilder = new AudienceRestrictionBuilder();
-        AudienceRestriction audienceRestriction = audienceRestrictionBuilder.buildObject();
-        AudienceBuilder audienceBuilder = new AudienceBuilder();
-        Audience audience = audienceBuilder.buildObject();
-        audience.setAudienceURI((String) attributeMap.get("spEntityId"));
-        audienceRestriction.getAudiences().add(audience);
-        conditions.getAudienceRestrictions().add(audienceRestriction);
         return conditions;
     }
 
@@ -222,7 +214,7 @@ public class MockSAMLBuilder {
         NameIDBuilder nameIDBuilder = new NameIDBuilder();
         NameID nameId = nameIDBuilder.buildObject();
         nameId.setFormat("urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified");
-        nameId.setValue((String)attributeMap.get("email"));
+        nameId.setValue((String)attributeMap.get(SAMLResponseValidator.EMAIL_REQUIRED_SAML_RESPONSE_ASSERTION));
         subject.setNameID(nameId);
         SubjectConfirmationBuilder subjectConfirmationBuilder = new SubjectConfirmationBuilder();
         SubjectConfirmation subjectConfirmation = subjectConfirmationBuilder.buildObject();
@@ -230,7 +222,6 @@ public class MockSAMLBuilder {
         SubjectConfirmationDataBuilder subjectConfirmationDataBuilder = new SubjectConfirmationDataBuilder();
         SubjectConfirmationData subjectConfirmationData = subjectConfirmationDataBuilder.buildObject();
         subjectConfirmationData.setNotOnOrAfter(getSubjectNotOnOrAfterDate(attributeMap));
-        subjectConfirmationData.setRecipient((String)attributeMap.get("target"));
         subjectConfirmation.setSubjectConfirmationData(subjectConfirmationData);
         subject.getSubjectConfirmations().add(subjectConfirmation);
         return subject;
@@ -344,8 +335,8 @@ public class MockSAMLBuilder {
         ssoBindings.put("urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST", "https://rapid.ca.com:443/affwebservices/public/saml2sso");
 
         Map<String, String> attributeDefs = new HashMap<>();
-        attributeDefs.put("email", "urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified");
-        attributeDefs.put("subscription", "urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified");
+        attributeDefs.put(SAMLResponseValidator.EMAIL_REQUIRED_SAML_RESPONSE_ASSERTION, "urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified");
+        attributeDefs.put(SAMLResponseValidator.SUBSCRIPTION_REQUIRED_SAML_RESPONSE_ASSERTION, "urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified");
 
         return createMetadata("sso_idp", "classpath:///saml.pkcs8", "classpath:///saml.crt", ssoBindings, attributeDefs);
     }

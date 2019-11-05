@@ -60,13 +60,6 @@ public class SAMLUtils {
 
     public static final String SAML_REQUEST_PARAM_NAME = "SAMLRequest";
 
-    public static final String DEV_ZUUL_SAML_RESPONSE_ACS_URL = "http://localhost:3000/login/sso";
-
-    public static final String DEV_ALM_STRIPPED_OPEN_TOKEN_ACS_URL = "http://localhost:7001/j_sso_security_check";
-
-    public static final String DEV_ALM_STRIPPED_SAML_RESPONSE_ACS_URL = "http://localhost:7001/j_saml_security_check";
-    public static final String DEV_ALM_UNSTRIPPED_SAML_RESPONSE_ACS_URL = "http://localhost:7001/slm/j_saml_security_check";
-
     private static final AtomicBoolean initialized = new AtomicBoolean(false);
 
     public static void init() {
@@ -80,19 +73,6 @@ public class SAMLUtils {
     }
 
     /**
-     * Create a new {@link SAMLResponseValidator} from the given IDP metadata XML file.
-     *
-     * @param metadataFile The IDP exported XML metadata file
-     * @return A new SAMLResponseValidator that will use the entity ID and credential found in the metadata to validate
-     * responses.
-     * @throws IOException   On any file read error
-     * @throws SamlException On any error parsing/validating the metadata
-     */
-    public static SAMLResponseValidator createSAMLResponseValidator(File metadataFile, String spEntityId, String recepient) throws IOException, SamlException {
-        return createSAMLResponseValidator(loadSAMLMetadataFromFile(metadataFile), spEntityId, recepient);
-    }
-
-    /**
      * Create a new {@link SAMLResponseValidator} from the given IDP metadata XML bytes.
      *
      * @param metadataXmlBytes The IDP metadata
@@ -100,12 +80,12 @@ public class SAMLUtils {
      * responses.
      * @throws SamlException On any error parsing/validating the metadata
      */
-    public static SAMLResponseValidator createSAMLResponseValidator(byte[] metadataXmlBytes, String spEntityId, String recepient) throws SamlException {
+    public static SAMLResponseValidator createSAMLResponseValidator(byte[] metadataXmlBytes) throws SamlException {
         MetadataProvider metadataProvider = loadSAMLMetadata(new ByteArrayInputStream(metadataXmlBytes));
-        return createSAMLResponseValidator(metadataProvider, spEntityId, recepient);
+        return createSAMLResponseValidator(metadataProvider);
     }
 
-    private static SAMLResponseValidator createSAMLResponseValidator(MetadataProvider metadataProvider, String spEntityId, String recepient) throws SamlException {
+    private static SAMLResponseValidator createSAMLResponseValidator(MetadataProvider metadataProvider) throws SamlException {
         EntityDescriptor entityDescriptor;
         try {
             entityDescriptor = (EntityDescriptor) metadataProvider.getMetadata();
@@ -125,7 +105,7 @@ public class SAMLUtils {
 
         Credential credential = getFirstCredential(idpSsoDescriptor)
                 .orElseThrow(() -> new RuntimeException("no signing credential found in IDP metadata"));
-        return new SAMLResponseValidator(ssoEntityId, credential, recepient, spEntityId);
+        return new SAMLResponseValidator(ssoEntityId, credential);
     }
 
     public static MetadataProvider loadSAMLMetadataFromXMLString(String xmlMetadata) throws SamlException {

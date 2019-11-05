@@ -36,29 +36,15 @@ import java.util.Objects;
  */
 public class SAMLResponseValidator {
 
+    public static final String SUBSCRIPTION_REQUIRED_SAML_RESPONSE_ASSERTION = "subscription";
+    public static final String EMAIL_REQUIRED_SAML_RESPONSE_ASSERTION = "email";
+
     private final String ssoEntityId;
     private final Credential credential;
-    private final String spEntityId;
-    private final String recepient;
 
-    /**
-     * Create a new validator for the given entity and credential.
-     *
-     * @param ssoEntityId the entity ID that will be be expected (also call the Issuer)
-     * @param credential  The credential that will be used to validate any signed elements
-     */
     public SAMLResponseValidator(String ssoEntityId, Credential credential) {
         this.ssoEntityId = ssoEntityId;
         this.credential = credential;
-        this.recepient = SAMLUtils.DEV_ALM_STRIPPED_SAML_RESPONSE_ACS_URL;
-        this.spEntityId = SAMLUtils.SP_ENTITY_ID_ALM;
-    }
-
-    public SAMLResponseValidator(String ssoEntityId, Credential credential, String recepient, String spEntityId) {
-        this.ssoEntityId = ssoEntityId;
-        this.credential = credential;
-        this.spEntityId = spEntityId;
-        this.recepient = recepient;
     }
 
     /**
@@ -120,7 +106,6 @@ public class SAMLResponseValidator {
         validateSignatures(samlResponse);
         validateAssertion(samlResponse);
         validateDateInAssertion(samlResponse, validateDates);
-        validateAudience(samlResponse);
         validateAuthnStatementExists(samlResponse);
         validateSubjectConfirmationData(samlResponse, validateDates);
     }
@@ -135,11 +120,6 @@ public class SAMLResponseValidator {
         if (validateDates && data.getNotOnOrAfter() != null && now.isAfter(data.getNotOnOrAfter())) {
             throw new ValidationException("The assertion cannot be used after  " + data.getNotOnOrAfter().toString());
         }
-
-        if(!data.getRecipient().equals(recepient)) {
-            throw new ValidationException("The assertion cannot be for another recipient : " + data.getRecipient());
-        }
-
     }
 
     private void validateAuthnStatementExists(Response samlResponse) throws ValidationException{
@@ -149,16 +129,6 @@ public class SAMLResponseValidator {
             throw new ValidationException("there must be at least one Authn statement in SAML response");
         }
 
-    }
-
-    private void validateAudience(Response samlResponse) throws ValidationException{
-        Assertion assertion = samlResponse.getAssertions().get(0);
-        Conditions conditions = assertion.getConditions();
-        AudienceRestriction audienceRestriction = conditions.getAudienceRestrictions().get(0);
-        Audience audience = audienceRestriction.getAudiences().get(0);
-        if(audience == null || !audience.getAudienceURI().equals(spEntityId)) {
-            throw new ValidationException("the SAML response is from a different partnership");
-        }
     }
 
     private void validateSignatures(SAMLObject samlResponse) throws ValidationException {

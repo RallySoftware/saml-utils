@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static com.rallydev.saml.MockSAMLBuilder.createSAMLResponse;
@@ -24,10 +25,7 @@ public class SAMLResponseValidatorTest extends Assert {
 
     private static final String MOCK_IDP_SAML_REDIRECT_URL = "http://localhost:8080/SingleSignOnService?RallySubscriptionId=271&TokenType=SAML";
 
-    private static final String SP_ENTITY_ID_REQUIRED_SAML_RESPONSE_ASSERTION = "spEntityId";
-    private static final String SUBSCRIPTION_REQUIRED_SAML_RESPONSE_ASSERTION = "subscription";
-    private static final String EMAIL_REQUIRED_SAML_RESPONSE_ASSERTION = "email";
-    private static final String TARGET_REQUIRED_SAML_RESPONSE_ASSERTION = "target";
+    private static final String DEV_ZUUL_SAML_RESPONSE_ACS_URL = "http://localhost:3000/login/sso";
 
     static {
         SAMLUtils.init();
@@ -37,23 +35,21 @@ public class SAMLResponseValidatorTest extends Assert {
     public void validateGoodSAMLResponse() throws IOException, SamlException, ValidationException, MessageDecodingException, TransformerException {
         String defaultMetadata = MockSAMLBuilder.createDefaultMetadata();
 
-        Map<String, String> attributes = getDefaultAttributes();
+        Map<String, String> defaultAttributes = getDefaultAttributes();
         String responseString = MockSAMLBuilder.createDefaultSAMLResponse();
 
-        SAMLResponseValidator validator = SAMLUtils.createSAMLResponseValidator(defaultMetadata.getBytes(StandardCharsets.UTF_8), SAMLUtils.SP_ENTITY_ID_ALM, SAMLUtils.DEV_ALM_STRIPPED_SAML_RESPONSE_ACS_URL);
+        SAMLResponseValidator validator = SAMLUtils.createSAMLResponseValidator(defaultMetadata.getBytes(StandardCharsets.UTF_8));
         Response response = validator.readAndValidateSAMLResponse(responseString);
 
         Map<String, String> parsedAttributes = SAMLUtils.getAttributes(response);
         System.out.println(parsedAttributes);
-        assertEquals(parsedAttributes.size(), 4);
-        assertEquals(parsedAttributes, attributes);
+        assertEquals(parsedAttributes.size(), defaultAttributes.size());
+        assertEquals(parsedAttributes, defaultAttributes);
     }
 
     @Test
     public void validateMockIdpSamlResponse() throws IOException, SamlException, ValidationException, MessageDecodingException, TransformerException {
         validateSAMLResponse(
-                SAMLUtils.SP_ENTITY_ID_ALM,
-                SAMLUtils.DEV_ALM_UNSTRIPPED_SAML_RESPONSE_ACS_URL,
                 "ssouser@sub265.com",
                 "265",
                 "/mock-idp-metadata.xml",
@@ -63,8 +59,6 @@ public class SAMLResponseValidatorTest extends Assert {
     @Test
     public void validate_Okta_exknyz5bdks93pPNy0h7_SamlResponse() throws IOException, SamlException, ValidationException, MessageDecodingException, TransformerException {
         validateSAMLResponse(
-                SAMLUtils.SP_ENTITY_ID_ALM,
-                SAMLUtils.DEV_ALM_UNSTRIPPED_SAML_RESPONSE_ACS_URL,
                 "ssouser1@test.com",
                 "100",
                 "/www.okta.com-exknyz5bdks93pPNy0h7-metadata.xml",
@@ -75,17 +69,19 @@ public class SAMLResponseValidatorTest extends Assert {
     @Test
     public void validate_Okta_exk1fm686jV32ywNB357_SamlResponse() throws IOException, SamlException, ValidationException, MessageDecodingException, TransformerException {
         validateSAMLResponse(
-                SAMLUtils.SP_ENTITY_ID_ALM,
-                SAMLUtils.DEV_ALM_UNSTRIPPED_SAML_RESPONSE_ACS_URL,
                 "ssouser1@test.com",
                 "313",
                 "/www.okta.com-exk1fm686jV32ywNB357-metadata.xml",
                 "/www.okta.com-exk1fm686jV32ywNB357-samlResponse.txt");
     }
 
+    private List<String> getRequiredAssertionKeys() {
+        return Arrays.asList(
+                SAMLResponseValidator.SUBSCRIPTION_REQUIRED_SAML_RESPONSE_ASSERTION,
+                SAMLResponseValidator.EMAIL_REQUIRED_SAML_RESPONSE_ASSERTION);
+    }
+
     private void validateSAMLResponse(
-            String spEntityId,
-            String recipient,
             String username,
             String subscription,
             String metadataPath,
@@ -93,34 +89,30 @@ public class SAMLResponseValidatorTest extends Assert {
         String idpMetadata = SAMLTestUtils.getResourceFileContentsAsString(metadataPath);
         String responseString = SAMLTestUtils.getResourceFileContentsAsString(samlResponsePath);
 
-        SAMLResponseValidator validator = SAMLUtils.createSAMLResponseValidator(idpMetadata.getBytes(StandardCharsets.UTF_8), spEntityId, recipient);
+        SAMLResponseValidator validator = SAMLUtils.createSAMLResponseValidator(idpMetadata.getBytes(StandardCharsets.UTF_8));
         Response response = validator.readAndValidateSAMLResponse(responseString, false);
 
         Map<String, String> parsedAttributes = SAMLUtils.getAttributes(response);
         Map<String, String> requiredAttributes = parsedAttributes.
                 entrySet().stream()
-                .filter(x -> Arrays.asList(
-                        SP_ENTITY_ID_REQUIRED_SAML_RESPONSE_ASSERTION,
-                        SUBSCRIPTION_REQUIRED_SAML_RESPONSE_ASSERTION,
-                        EMAIL_REQUIRED_SAML_RESPONSE_ASSERTION,
-                        TARGET_REQUIRED_SAML_RESPONSE_ASSERTION).contains(x.getKey()))
+                .filter(x -> getRequiredAssertionKeys().contains(x.getKey()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        assertEquals(requiredAttributes.size(), 4);
+        assertEquals(requiredAttributes.size(), getRequiredAssertionKeys().size());
 
-        Map<String, String> expectedAttributes = getExpectedAttributes(username, subscription, spEntityId, recipient);
+        Map<String, String> expectedAttributes = getExpectedAttributes(username, subscription);
         assertEquals(requiredAttributes, expectedAttributes);
     }
 
     @Test
     public void modifyRedirectUrlDisabled()  {
-        String modifiedRedirectUrl = SAMLUtils.modifyRedirectUrlForDevTestSSOFederationServer(MOCK_IDP_SAML_REDIRECT_URL, SAMLUtils.DEV_ZUUL_SAML_RESPONSE_ACS_URL, SAMLUtils.SP_ENTITY_ID_ZUUL, false);
+        String modifiedRedirectUrl = SAMLUtils.modifyRedirectUrlForDevTestSSOFederationServer(MOCK_IDP_SAML_REDIRECT_URL,  DEV_ZUUL_SAML_RESPONSE_ACS_URL, SAMLUtils.SP_ENTITY_ID_ZUUL, false);
         assertEquals(MOCK_IDP_SAML_REDIRECT_URL, modifiedRedirectUrl);
     }
 
     @Test
     public void modifyRedirectUrlEnabled()  {
-        String modifiedRedirectUrl = SAMLUtils.modifyRedirectUrlForDevTestSSOFederationServer(MOCK_IDP_SAML_REDIRECT_URL, SAMLUtils.DEV_ZUUL_SAML_RESPONSE_ACS_URL, SAMLUtils.SP_ENTITY_ID_ZUUL, true);
+        String modifiedRedirectUrl = SAMLUtils.modifyRedirectUrlForDevTestSSOFederationServer(MOCK_IDP_SAML_REDIRECT_URL, DEV_ZUUL_SAML_RESPONSE_ACS_URL, SAMLUtils.SP_ENTITY_ID_ZUUL, true);
         assertNotEquals(MOCK_IDP_SAML_REDIRECT_URL, modifiedRedirectUrl);
         assertNotNull(SAMLTestUtils.getParamFromUrl(modifiedRedirectUrl, SAMLUtils.SAML_REQUEST_PARAM_NAME));
     }
@@ -134,7 +126,7 @@ public class SAMLResponseValidatorTest extends Assert {
         Map<String, String> attributes = getDefaultAttributes();
         String responseString = createSAMLResponse(attributes, "sso_idp", "classpath:///saml.pkcs8", "classpath:///saml.crt", false);
 
-        SAMLResponseValidator validator = SAMLUtils.createSAMLResponseValidator(metdata.getBytes(StandardCharsets.UTF_8), SAMLUtils.SP_ENTITY_ID_ALM, SAMLUtils.DEV_ALM_STRIPPED_SAML_RESPONSE_ACS_URL);
+        SAMLResponseValidator validator = SAMLUtils.createSAMLResponseValidator(metdata.getBytes(StandardCharsets.UTF_8));
         assertThrows(ValidationException.class, () -> validator.readAndValidateSAMLResponse(responseString));
     }
 
@@ -143,25 +135,15 @@ public class SAMLResponseValidatorTest extends Assert {
         Map<String, String> attributes = getDefaultAttributes();
         String responseString = createSAMLResponse(attributes, "sso_idp", "classpath:///saml.pkcs8", "classpath:///saml.crt", false);
 
-        SAMLResponseValidator validator = SAMLUtils.createSAMLResponseValidator(SAMLTestUtils.readClasspathResource("sample_metadata.xml"), SAMLUtils.SP_ENTITY_ID_ALM, SAMLUtils.DEV_ALM_STRIPPED_SAML_RESPONSE_ACS_URL);
+        SAMLResponseValidator validator = SAMLUtils.createSAMLResponseValidator(SAMLTestUtils.readClasspathResource("sample_metadata.xml"));
         assertThrows(ValidationException.class, () -> validator.readAndValidateSAMLResponse(responseString));
     }
 
     @Test
     public void badResponseCausesException() throws FileNotFoundException, SamlException {
-        SAMLResponseValidator validator = SAMLUtils.createSAMLResponseValidator(SAMLTestUtils.readClasspathResource("sample_metadata.xml"), SAMLUtils.SP_ENTITY_ID_ALM, SAMLUtils.DEV_ALM_STRIPPED_SAML_RESPONSE_ACS_URL);
+        SAMLResponseValidator validator = SAMLUtils.createSAMLResponseValidator(SAMLTestUtils.readClasspathResource("sample_metadata.xml"));
         assertThrows(() -> validator.readAndValidateSAMLResponse("toast"));
         assertThrows(() -> validator.readAndValidateSAMLResponse(null));
-    }
-
-    @Test
-    public void spEnitityIdMistachCausesException() throws SamlException {
-        assertThrowsErrorWithAttributes("spEntityId", "wrongSpId");
-    }
-
-    @Test
-    public void recipientMistachCausesException() throws SamlException {
-        assertThrowsErrorWithAttributes("target", SAMLUtils.DEV_ALM_STRIPPED_OPEN_TOKEN_ACS_URL);
     }
 
     @Test
@@ -188,7 +170,7 @@ public class SAMLResponseValidatorTest extends Assert {
     public void assertThrowsErrorWithAttributes(String key, Object value) throws SamlException{
         Map attributes = getDefaultAttributes();
         attributes.put(key, value);
-        SAMLResponseValidator validator = SAMLUtils.createSAMLResponseValidator(SAMLTestUtils.readClasspathResource("sample_metadata.xml"), SAMLUtils.SP_ENTITY_ID_ALM, SAMLUtils.DEV_ALM_STRIPPED_SAML_RESPONSE_ACS_URL);
+        SAMLResponseValidator validator = SAMLUtils.createSAMLResponseValidator(SAMLTestUtils.readClasspathResource("sample_metadata.xml"));
         String responseString = createSAMLResponse(attributes, "sso_idp", "classpath:///saml.pkcs8", "classpath:///saml.crt", false);
         assertThrows(() -> validator.readAndValidateSAMLResponse(responseString));
     }
@@ -202,29 +184,28 @@ public class SAMLResponseValidatorTest extends Assert {
         String metdata = MockSAMLBuilder.createMetadata("sso_idp", "classpath:///saml.pkcs8", "classpath:///saml.crt", ssoBindings, attributeDefs);
 
         Map<String, String> attributes = getDefaultAttributes();
+        int numDefaultAttributes = attributes.size();
         attributes.put("locale", "America/Denver");
         String responseString = createSAMLResponse(attributes, "sso_idp", "classpath:///saml.pkcs8", "classpath:///saml.crt", true);
-        SAMLResponseValidator validator = SAMLUtils.createSAMLResponseValidator(metdata.getBytes(StandardCharsets.UTF_8), SAMLUtils.SP_ENTITY_ID_ALM, SAMLUtils.DEV_ALM_STRIPPED_SAML_RESPONSE_ACS_URL);
+        SAMLResponseValidator validator = SAMLUtils.createSAMLResponseValidator(metdata.getBytes(StandardCharsets.UTF_8));
         Response response = validator.readAndValidateSAMLResponse(responseString);
 
 
         Map<String, String> parsedAttributes = SAMLUtils.getAttributes(response);
         System.out.println(parsedAttributes);
-        assertEquals(parsedAttributes.size(), 5);
+        assertEquals(parsedAttributes.size(), numDefaultAttributes + 1);
         assertEquals(parsedAttributes, attributes);
     }
 
 
     public static Map<String, String> getDefaultAttributes() {
-        return getExpectedAttributes("ue@test.com", "100", SAMLUtils.SP_ENTITY_ID_ALM, SAMLUtils.DEV_ALM_STRIPPED_SAML_RESPONSE_ACS_URL);
+        return getExpectedAttributes("ue@test.com", "100");
     }
 
-    public static Map<String, String> getExpectedAttributes(String email, String subscription, String spEntityId, String target) {
+    public static Map<String, String> getExpectedAttributes(String email, String subscription) {
         HashMap<String, String> attributes = new HashMap<>();
-        attributes.put(EMAIL_REQUIRED_SAML_RESPONSE_ASSERTION, email);
-        attributes.put(SUBSCRIPTION_REQUIRED_SAML_RESPONSE_ASSERTION, subscription);
-        attributes.put(SP_ENTITY_ID_REQUIRED_SAML_RESPONSE_ASSERTION, spEntityId);
-        attributes.put(TARGET_REQUIRED_SAML_RESPONSE_ASSERTION, target);
+        attributes.put(SAMLResponseValidator.EMAIL_REQUIRED_SAML_RESPONSE_ASSERTION, email);
+        attributes.put(SAMLResponseValidator.SUBSCRIPTION_REQUIRED_SAML_RESPONSE_ASSERTION, subscription);
         return attributes;
     }
 }
