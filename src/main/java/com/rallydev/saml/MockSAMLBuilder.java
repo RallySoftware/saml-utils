@@ -7,8 +7,6 @@ import org.opensaml.saml2.core.Assertion;
 import org.opensaml.saml2.core.Attribute;
 import org.opensaml.saml2.core.AttributeStatement;
 import org.opensaml.saml2.core.AttributeValue;
-import org.opensaml.saml2.core.Audience;
-import org.opensaml.saml2.core.AudienceRestriction;
 import org.opensaml.saml2.core.AuthnContext;
 import org.opensaml.saml2.core.AuthnContextClassRef;
 import org.opensaml.saml2.core.AuthnStatement;
@@ -25,7 +23,6 @@ import org.opensaml.saml2.core.SubjectConfirmationData;
 import org.opensaml.saml2.core.impl.AssertionBuilder;
 import org.opensaml.saml2.core.impl.AttributeBuilder;
 import org.opensaml.saml2.core.impl.AttributeStatementBuilder;
-import org.opensaml.saml2.core.impl.AudienceBuilder;
 import org.opensaml.saml2.core.impl.AudienceRestrictionBuilder;
 import org.opensaml.saml2.core.impl.AuthnContextBuilder;
 import org.opensaml.saml2.core.impl.AuthnContextClassRefBuilder;
@@ -98,12 +95,18 @@ public class MockSAMLBuilder {
     private static final String SP_ENTITY_ID_ALM = "alm_sp";
     private static final String SP_ENTITY_ID_ZUUL = "sp_zuul";
 
+    public static final String SAMPLE_IDP_ENTITY_ID = "sso_idp";
+
     public static String createDefaultSAMLResponse() {
         HashMap<String, String> attributes = new HashMap<>();
         attributes.put(SAMLResponseValidator.EMAIL_REQUIRED_SAML_RESPONSE_ASSERTION, "ue@test.com");
         attributes.put(SAMLResponseValidator.SUBSCRIPTION_REQUIRED_SAML_RESPONSE_ASSERTION, "100");
 
-        return createSAMLResponse(attributes, "sso_idp", "classpath:///saml.pkcs8", "classpath:///saml.crt", false);
+        return createSAMLResponseWithDefaultKey(attributes, SAMPLE_IDP_ENTITY_ID, false);
+    }
+
+    public static String createSAMLResponseWithDefaultKey(Map<String, ?> attributesMap, String issuerName, boolean gzipped) {
+        return createSAMLResponse(attributesMap, issuerName, "classpath:///saml.pkcs8", "classpath:///saml.crt", gzipped);
     }
 
     /**
@@ -338,11 +341,16 @@ public class MockSAMLBuilder {
         attributeDefs.put(SAMLResponseValidator.EMAIL_REQUIRED_SAML_RESPONSE_ASSERTION, "urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified");
         attributeDefs.put(SAMLResponseValidator.SUBSCRIPTION_REQUIRED_SAML_RESPONSE_ASSERTION, "urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified");
 
-        return createMetadata("sso_idp", "classpath:///saml.pkcs8", "classpath:///saml.crt", ssoBindings, attributeDefs);
+        return createMetadataWithDefaultKey(SAMPLE_IDP_ENTITY_ID, ssoBindings, attributeDefs);
     }
 
     @SuppressWarnings("unchecked")
-    public static String createMetadata(String issuer, String privateKeyLocation, String publicKeyLocation, Map<String, String> ssoBindings, Map<String, String> attributeDefinitions) {
+    public static String createMetadataWithDefaultKey(String issuer, Map<String, String> ssoBindings, Map<String, String> attributeDefinitions) {
+        return createMetadata(issuer, "classpath:///saml.pkcs8", "classpath:///saml.crt", ssoBindings, attributeDefinitions);
+    }
+
+        @SuppressWarnings("unchecked")
+    private static String createMetadata(String issuer, String privateKeyLocation, String publicKeyLocation, Map<String, String> ssoBindings, Map<String, String> attributeDefinitions) {
         XMLObjectBuilderFactory builderFactory = Configuration.getBuilderFactory();
         SAMLObjectBuilder<EntityDescriptor> builder = (SAMLObjectBuilder<EntityDescriptor>) builderFactory.getBuilder(EntityDescriptor.DEFAULT_ELEMENT_NAME);
         EntityDescriptor descriptor = builder.buildObject();

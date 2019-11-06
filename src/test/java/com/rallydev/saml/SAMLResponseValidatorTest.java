@@ -17,7 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.rallydev.saml.MockSAMLBuilder.createSAMLResponse;
+import static com.rallydev.saml.MockSAMLBuilder.createSAMLResponseWithDefaultKey;
 import static com.rallydev.saml.SAMLTestUtils.defaultAttributeDefinitions;
 import static com.rallydev.saml.SAMLTestUtils.defaultSSOBindings;
 
@@ -121,10 +121,10 @@ public class SAMLResponseValidatorTest extends Assert {
     public void mismatchIssuerIsNotValid() throws FileNotFoundException, SamlException {
         Map<String, String> ssoBindings = defaultSSOBindings();
         Map<String, String> attributeDefs = defaultAttributeDefinitions();
-        String metdata = MockSAMLBuilder.createMetadata("sso_idpWRONG", "classpath:///saml.pkcs8", "classpath:///saml.crt", ssoBindings, attributeDefs);
+        String metdata = MockSAMLBuilder.createMetadataWithDefaultKey("sso_idpWRONG", ssoBindings, attributeDefs);
 
         Map<String, String> attributes = getDefaultAttributes();
-        String responseString = createSAMLResponse(attributes, "sso_idp", "classpath:///saml.pkcs8", "classpath:///saml.crt", false);
+        String responseString = createSAMLResponseWithDefaultKey(attributes, MockSAMLBuilder.SAMPLE_IDP_ENTITY_ID, false);
 
         SAMLResponseValidator validator = SAMLUtils.createSAMLResponseValidator(metdata.getBytes(StandardCharsets.UTF_8));
         assertThrows(ValidationException.class, () -> validator.readAndValidateSAMLResponse(responseString));
@@ -133,7 +133,7 @@ public class SAMLResponseValidatorTest extends Assert {
     @Test
     public void mismatchedCredentialsIsNotValid() throws FileNotFoundException, SamlException {
         Map<String, String> attributes = getDefaultAttributes();
-        String responseString = createSAMLResponse(attributes, "sso_idp", "classpath:///saml.pkcs8", "classpath:///saml.crt", false);
+        String responseString = createSAMLResponseWithDefaultKey(attributes, MockSAMLBuilder.SAMPLE_IDP_ENTITY_ID, false);
 
         SAMLResponseValidator validator = SAMLUtils.createSAMLResponseValidator(SAMLTestUtils.readClasspathResource("sample_metadata.xml"));
         assertThrows(ValidationException.class, () -> validator.readAndValidateSAMLResponse(responseString));
@@ -171,7 +171,7 @@ public class SAMLResponseValidatorTest extends Assert {
         Map attributes = getDefaultAttributes();
         attributes.put(key, value);
         SAMLResponseValidator validator = SAMLUtils.createSAMLResponseValidator(SAMLTestUtils.readClasspathResource("sample_metadata.xml"));
-        String responseString = createSAMLResponse(attributes, "sso_idp", "classpath:///saml.pkcs8", "classpath:///saml.crt", false);
+        String responseString = createSAMLResponseWithDefaultKey(attributes, MockSAMLBuilder.SAMPLE_IDP_ENTITY_ID, false);
         assertThrows(() -> validator.readAndValidateSAMLResponse(responseString));
     }
 
@@ -181,12 +181,12 @@ public class SAMLResponseValidatorTest extends Assert {
         Map<String, String> attributeDefs = defaultAttributeDefinitions();
         attributeDefs.put("locale", "urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified");
 
-        String metdata = MockSAMLBuilder.createMetadata("sso_idp", "classpath:///saml.pkcs8", "classpath:///saml.crt", ssoBindings, attributeDefs);
+        String metdata = MockSAMLBuilder.createMetadataWithDefaultKey(MockSAMLBuilder.SAMPLE_IDP_ENTITY_ID, ssoBindings, attributeDefs);
 
         Map<String, String> attributes = getDefaultAttributes();
         int numDefaultAttributes = attributes.size();
         attributes.put("locale", "America/Denver");
-        String responseString = createSAMLResponse(attributes, "sso_idp", "classpath:///saml.pkcs8", "classpath:///saml.crt", true);
+        String responseString = createSAMLResponseWithDefaultKey(attributes, MockSAMLBuilder.SAMPLE_IDP_ENTITY_ID, true);
         SAMLResponseValidator validator = SAMLUtils.createSAMLResponseValidator(metdata.getBytes(StandardCharsets.UTF_8));
         Response response = validator.readAndValidateSAMLResponse(responseString);
 
