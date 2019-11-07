@@ -75,6 +75,15 @@ public class SAMLResponseValidatorTest extends Assert {
                 "/www.okta.com-exk1fm686jV32ywNB357-samlResponse.txt");
     }
 
+    @Test
+    public void validate_Okta_exko9ji5yhMifwM6G0h7_SamlResponse() throws IOException, SamlException, ValidationException, MessageDecodingException, TransformerException {
+        validateSAMLResponse(
+                "ssouser1@test.com",
+                "148",
+                "/www.okta.com-exko9ji5yhMifwM6G0h7-metadata.xml",
+                "/www.okta.com-exko9ji5yhMifwM6G0h7-samlResponse.txt");
+    }
+
     private List<String> getRequiredAssertionKeys() {
         return Arrays.asList(
                 SAMLResponseValidator.SUBSCRIPTION_REQUIRED_SAML_RESPONSE_ASSERTION,
