@@ -39,12 +39,16 @@ public class SAMLResponseValidator {
     public static final String SUBSCRIPTION_REQUIRED_SAML_RESPONSE_ASSERTION = "subscription";
     public static final String EMAIL_REQUIRED_SAML_RESPONSE_ASSERTION = "email";
 
+    public static final String AUDIENCE_REQUIRED_SAML_RESPONSE_CONDITION = "audience";
+
     private final String ssoEntityId;
     private final Credential credential;
+    private final String audience;
 
-    public SAMLResponseValidator(String ssoEntityId, Credential credential) {
+    public SAMLResponseValidator(String ssoEntityId, Credential credential, String audience) {
         this.ssoEntityId = ssoEntityId;
         this.credential = credential;
+        this.audience = audience;
     }
 
     /**
@@ -106,6 +110,7 @@ public class SAMLResponseValidator {
         validateSignatures(samlResponse);
         validateAssertion(samlResponse);
         validateDateInAssertion(samlResponse, validateDates);
+        validateAudience(samlResponse);
         validateAuthnStatementExists(samlResponse);
         validateSubjectConfirmationData(samlResponse, validateDates);
     }
@@ -129,6 +134,17 @@ public class SAMLResponseValidator {
             throw new ValidationException("there must be at least one Authn statement in SAML response");
         }
 
+    }
+
+    private void validateAudience(Response samlResponse) throws ValidationException{
+        Assertion assertion = samlResponse.getAssertions().get(0);
+        Conditions conditions = assertion.getConditions();
+        AudienceRestriction audienceRestriction = conditions.getAudienceRestrictions().get(0);
+        Audience audience = audienceRestriction.getAudiences().get(0);
+        if(audience == null || audience.getAudienceURI() == null || !audience.getAudienceURI().equals(this.audience)) {
+            throw new ValidationException(
+                    String.format("the SAML response does not have the expected audience: expected=%s  actual=%s", this.audience, audience.getAudienceURI()));
+        }
     }
 
     private void validateSignatures(SAMLObject samlResponse) throws ValidationException {

@@ -3,10 +3,13 @@ package com.rallydev.saml;
 import org.joda.time.DateTime;
 import org.opensaml.Configuration;
 import org.opensaml.common.SAMLObjectBuilder;
+//import org.opensaml.common.SAMLRuntimeException;
 import org.opensaml.saml2.core.Assertion;
 import org.opensaml.saml2.core.Attribute;
 import org.opensaml.saml2.core.AttributeStatement;
 import org.opensaml.saml2.core.AttributeValue;
+import org.opensaml.saml2.core.Audience;
+import org.opensaml.saml2.core.AudienceRestriction;
 import org.opensaml.saml2.core.AuthnContext;
 import org.opensaml.saml2.core.AuthnContextClassRef;
 import org.opensaml.saml2.core.AuthnStatement;
@@ -23,6 +26,7 @@ import org.opensaml.saml2.core.SubjectConfirmationData;
 import org.opensaml.saml2.core.impl.AssertionBuilder;
 import org.opensaml.saml2.core.impl.AttributeBuilder;
 import org.opensaml.saml2.core.impl.AttributeStatementBuilder;
+import org.opensaml.saml2.core.impl.AudienceBuilder;
 import org.opensaml.saml2.core.impl.AudienceRestrictionBuilder;
 import org.opensaml.saml2.core.impl.AuthnContextBuilder;
 import org.opensaml.saml2.core.impl.AuthnContextClassRefBuilder;
@@ -92,15 +96,17 @@ import static org.opensaml.xml.security.keyinfo.KeyInfoHelper.buildX509Certifica
  */
 public class MockSAMLBuilder {
 
-    private static final String SP_ENTITY_ID_ALM = "alm_sp";
-    private static final String SP_ENTITY_ID_ZUUL = "sp_zuul";
-
     public static final String SAMPLE_IDP_ENTITY_ID = "sso_idp";
+
+    public static final String DEFAULT_EMAIL = "ue@test.com";
+    public static final String DEFAULT_SUBSCRIPTION = "100";
+    public static final String DEFAULT_AUDIENCE = "https://rally1.rallydev.com";
 
     public static String createDefaultSAMLResponse() {
         HashMap<String, String> attributes = new HashMap<>();
-        attributes.put(SAMLResponseValidator.EMAIL_REQUIRED_SAML_RESPONSE_ASSERTION, "ue@test.com");
-        attributes.put(SAMLResponseValidator.SUBSCRIPTION_REQUIRED_SAML_RESPONSE_ASSERTION, "100");
+        attributes.put(SAMLResponseValidator.EMAIL_REQUIRED_SAML_RESPONSE_ASSERTION, DEFAULT_EMAIL);
+        attributes.put(SAMLResponseValidator.SUBSCRIPTION_REQUIRED_SAML_RESPONSE_ASSERTION, DEFAULT_SUBSCRIPTION);
+        attributes.put(SAMLResponseValidator.AUDIENCE_REQUIRED_SAML_RESPONSE_CONDITION, DEFAULT_AUDIENCE);
 
         return createSAMLResponseWithDefaultKey(attributes, SAMPLE_IDP_ENTITY_ID, false);
     }
@@ -193,7 +199,15 @@ public class MockSAMLBuilder {
         Conditions conditions = conditionsBuilder.buildObject();
         conditions.setNotBefore(getAssertionNotBefore(attributeMap));
         conditions.setNotOnOrAfter(getAssertionNotOnOrAfterDate(attributeMap));
+
         AudienceRestrictionBuilder audienceRestrictionBuilder = new AudienceRestrictionBuilder();
+        AudienceRestriction audienceRestriction = audienceRestrictionBuilder.buildObject();
+        AudienceBuilder audienceBuilder = new AudienceBuilder();
+        Audience audience = audienceBuilder.buildObject();
+        audience.setAudienceURI((String) attributeMap.get(SAMLResponseValidator.AUDIENCE_REQUIRED_SAML_RESPONSE_CONDITION));
+        audienceRestriction.getAudiences().add(audience);
+        conditions.getAudienceRestrictions().add(audienceRestriction);
+
         return conditions;
     }
 

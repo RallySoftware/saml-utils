@@ -80,12 +80,12 @@ public class SAMLUtils {
      * responses.
      * @throws SamlException On any error parsing/validating the metadata
      */
-    public static SAMLResponseValidator createSAMLResponseValidator(byte[] metadataXmlBytes) throws SamlException {
+    public static SAMLResponseValidator createSAMLResponseValidator(byte[] metadataXmlBytes, String audience) throws SamlException {
         MetadataProvider metadataProvider = loadSAMLMetadata(new ByteArrayInputStream(metadataXmlBytes));
-        return createSAMLResponseValidator(metadataProvider);
+        return createSAMLResponseValidator(metadataProvider, audience);
     }
 
-    private static SAMLResponseValidator createSAMLResponseValidator(MetadataProvider metadataProvider) throws SamlException {
+    private static SAMLResponseValidator createSAMLResponseValidator(MetadataProvider metadataProvider, String audience) throws SamlException {
         EntityDescriptor entityDescriptor;
         try {
             entityDescriptor = (EntityDescriptor) metadataProvider.getMetadata();
@@ -105,7 +105,7 @@ public class SAMLUtils {
 
         Credential credential = getFirstCredential(idpSsoDescriptor)
                 .orElseThrow(() -> new RuntimeException("no signing credential found in IDP metadata"));
-        return new SAMLResponseValidator(ssoEntityId, credential);
+        return new SAMLResponseValidator(ssoEntityId, credential, audience);
     }
 
     public static MetadataProvider loadSAMLMetadataFromXMLString(String xmlMetadata) throws SamlException {
