@@ -35,7 +35,6 @@ public class SAMLResponseValidatorTest extends Assert {
     public void validateGoodSAMLResponse() throws IOException, SamlException, ValidationException, MessageDecodingException, TransformerException {
         String defaultMetadata = MockSAMLBuilder.createDefaultMetadata();
 
-        Map<String, String> defaultAttributes = getDefaultAttributes();
         String responseString = MockSAMLBuilder.createDefaultSAMLResponse();
 
         SAMLResponseValidator validator = SAMLUtils.createSAMLResponseValidator(defaultMetadata.getBytes(StandardCharsets.UTF_8), MockSAMLBuilder.DEFAULT_AUDIENCE);
@@ -43,8 +42,10 @@ public class SAMLResponseValidatorTest extends Assert {
 
         Map<String, String> parsedAttributes = SAMLUtils.getAttributes(response);
         System.out.println(parsedAttributes);
-        assertEquals(parsedAttributes.size(), defaultAttributes.size());
-        assertEquals(parsedAttributes, defaultAttributes);
+        Map<String, String> expectedAttributes = getDefaultAttributes();
+        expectedAttributes.put(SAMLResponseValidator.AUDIENCE_REQUIRED_SAML_RESPONSE_CONDITION, MockSAMLBuilder.DEFAULT_AUDIENCE);
+        assertEquals(parsedAttributes.size(), expectedAttributes.size());
+        assertEquals(parsedAttributes, expectedAttributes);
     }
 
     @Test
@@ -91,6 +92,29 @@ public class SAMLResponseValidatorTest extends Assert {
                 "/www.okta.com-exkoya2eyoW7S7OW80h7-metadata.xml",
                 "/www.okta.com-exkoya2eyoW7S7OW80h7-samlResponse.txt");
     }
+
+    @Test
+    public void validate_Okta_exk1gdbaindeR1Jrj1d8_SamlResponse() throws IOException, SamlException, ValidationException, MessageDecodingException, TransformerException {
+        // OKTA_PROD_RALLY_PROD_SSO_METADATA_LOCATION
+        validateSAMLResponse(
+                "ssouser1@test.com",
+                "163",
+                "https://rally1.rallydev.com",
+                "/www.okta.com-exk1gdbaindeR1Jrj1d8-metadata.xml",
+                "/www.okta.com-exk1gdbaindeR1Jrj1d8-samlResponse.txt");
+    }
+
+    @Test
+    public void validate_Okta_exk1gf4q36mwg5sJO1d8_SamlResponse() throws IOException, SamlException, ValidationException, MessageDecodingException, TransformerException {
+        // OKTA_PROD_RALLY_PROD_SSO_METADATA_LOCATION
+        validateSAMLResponse(
+                "ssouser1@test.com",
+                "163",
+                "https://rally1.rallydev.com",
+                "/www.okta.com-exk1gf4q36mwg5sJO1d8-metadata.xml",
+                "/www.okta.com-exk1gf4q36mwg5sJO1d8-samlResponse.txt");
+    }
+
 
     private List<String> getRequiredAssertionKeys() {
         return Arrays.asList(
@@ -202,8 +226,9 @@ public class SAMLResponseValidatorTest extends Assert {
         String metdata = MockSAMLBuilder.createMetadataWithDefaultKey(MockSAMLBuilder.SAMPLE_IDP_ENTITY_ID, ssoBindings, attributeDefs);
 
         Map<String, String> attributes = getDefaultAttributes();
-        int numDefaultAttributes = attributes.size();
         attributes.put("locale", "America/Denver");
+        attributes.put(SAMLResponseValidator.AUDIENCE_REQUIRED_SAML_RESPONSE_CONDITION, MockSAMLBuilder.DEFAULT_AUDIENCE);
+        int numAttributes = attributes.size();
         String responseString = createSAMLResponseWithDefaultKey(attributes, MockSAMLBuilder.SAMPLE_IDP_ENTITY_ID, true);
         SAMLResponseValidator validator = SAMLUtils.createSAMLResponseValidator(metdata.getBytes(StandardCharsets.UTF_8), MockSAMLBuilder.DEFAULT_AUDIENCE);
         Response response = validator.readAndValidateSAMLResponse(responseString);
@@ -211,7 +236,7 @@ public class SAMLResponseValidatorTest extends Assert {
 
         Map<String, String> parsedAttributes = SAMLUtils.getAttributes(response);
         System.out.println(parsedAttributes);
-        assertEquals(parsedAttributes.size(), numDefaultAttributes + 1);
+        assertEquals(parsedAttributes.size(), numAttributes);
         assertEquals(parsedAttributes, attributes);
     }
 
