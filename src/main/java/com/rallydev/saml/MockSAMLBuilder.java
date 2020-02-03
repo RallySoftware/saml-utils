@@ -3,7 +3,6 @@ package com.rallydev.saml;
 import org.joda.time.DateTime;
 import org.opensaml.Configuration;
 import org.opensaml.common.SAMLObjectBuilder;
-//import org.opensaml.common.SAMLRuntimeException;
 import org.opensaml.saml2.core.Assertion;
 import org.opensaml.saml2.core.Attribute;
 import org.opensaml.saml2.core.AttributeStatement;
@@ -149,6 +148,7 @@ public class MockSAMLBuilder {
     response.setIssueInstant(new DateTime());
     response.getAssertions().add(assertion);
     response.setIssuer(createIssuer(issuerName));
+
 
     ResponseMarshaller marshaller = new ResponseMarshaller();
     Element element;
