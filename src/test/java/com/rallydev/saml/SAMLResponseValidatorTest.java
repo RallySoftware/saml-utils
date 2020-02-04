@@ -104,16 +104,16 @@ public class SAMLResponseValidatorTest extends Assert {
                 "/www.okta.com-exk1gdbaindeR1Jrj1d8-samlResponse.txt");
     }
 
-//    @Test
-//    public void validate_Okta_exk1gf4q36mwg5sJO1d8_SamlResponse() throws IOException, SamlException, ValidationException, MessageDecodingException, TransformerException {
-//        // OKTA_PROD_EU_RALLY_PROD_EU_SSO_METADATA_LOCATION
-//        validateSAMLResponse(
-//                "ssouser1@test.com",
-//                "163",
-//                "https://rally1.rallydev.com",
-//                "/www.okta.com-exk1gf4q36mwg5sJO1d8-metadata.xml",
-//                "/www.okta.com-exk1gf4q36mwg5sJO1d8-samlResponse.txt");
-//    }
+    @Test
+    public void validate_Okta_exk1gf4q36mwg5sJO1d8_SamlResponse() throws IOException, SamlException, ValidationException, MessageDecodingException, TransformerException {
+        // OKTA_PROD_EU_RALLY_PROD_EU_SSO_METADATA_LOCATION
+        validateSAMLResponse(
+                "prodssousereu1@test.com",
+                "101165",
+                "https://eu1.rallydev.com",
+                "/www.okta.com-exk1gf4q36mwg5sJO1d8-metadata.xml",
+                "/www.okta.com-exk1gf4q36mwg5sJO1d8-samlResponse.txt");
+    }
 
 
     private List<String> getRequiredAssertionKeys() {
