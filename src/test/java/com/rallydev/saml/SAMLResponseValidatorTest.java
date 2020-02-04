@@ -59,39 +59,39 @@ public class SAMLResponseValidatorTest extends Assert {
                 "/mock-idp-samlResponse.txt");
     }
 
-//    @Test
-//    public void validate_Okta_exknyz5bdks93pPNy0h7_SamlResponse() throws IOException, SamlException, ValidationException, MessageDecodingException, TransformerException {
-//        // OKTA_PREVIEW_LOCALHOST_SSO_METADATA_LOCATION
-//        validateSAMLResponse(
-//                "ssouser1@test.com",
-//                "100",
-//                "http://localhost",
-//                "/www.okta.com-exknyz5bdks93pPNy0h7-metadata.xml",
-//                "/www.okta.com-exknyz5bdks93pPNy0h7-samlResponse.txt"
-//        );
-//    }
+    @Test
+    public void validate_Okta_exknyz5bdks93pPNy0h7_SamlResponse() throws IOException, SamlException, ValidationException, MessageDecodingException, TransformerException {
+        // OKTA_PREVIEW_LOCALHOST_SSO_METADATA_LOCATION
+        validateSAMLResponse(
+                "ssouser1@test.com",
+                "170904",
+                "http://localhost",
+                "/www.okta.com-exknyz5bdks93pPNy0h7-metadata.xml",
+                "/www.okta.com-exknyz5bdks93pPNy0h7-samlResponse.txt"
+        );
+    }
 
-//    @Test
-//    public void validate_Okta_exko9ji5yhMifwM6G0h7_SamlResponse() throws IOException, SamlException, ValidationException, MessageDecodingException, TransformerException {
-//        // OKTA_PREVIEW_TESTN_SSO_METADATA_LOCATION
-//        validateSAMLResponse(
-//                "ssouser1@test.com",
-//                "148",
-//                "https://oktatest100.testn.f4tech.com",
-//                "/www.okta.com-exko9ji5yhMifwM6G0h7-metadata.xml",
-//                "/www.okta.com-exko9ji5yhMifwM6G0h7-samlResponse.txt");
-//    }
+    @Test
+    public void validate_Okta_exko9ji5yhMifwM6G0h7_SamlResponse() throws IOException, SamlException, ValidationException, MessageDecodingException, TransformerException {
+        // OKTA_PREVIEW_TESTN_SSO_METADATA_LOCATION
+        validateSAMLResponse(
+                "ssouser1@test.com",
+                "170904",
+                "https://oktatest100.testn.f4tech.com",
+                "/www.okta.com-exko9ji5yhMifwM6G0h7-metadata.xml",
+                "/www.okta.com-exko9ji5yhMifwM6G0h7-samlResponse.txt");
+    }
 
-//    @Test
-//    public void validate_Okta_exkoya2eyoW7S7OW80h7_SamlResponse() throws IOException, SamlException, ValidationException, MessageDecodingException, TransformerException {
-//        // OKTA_PREVIEW_RALLY_PROD_SSO_METADATA_LOCATION
-//        validateSAMLResponse(
-//                "ssouser1@test.com",
-//                "163",
-//                "https://rally1.rallydev.com",
-//                "/www.okta.com-exkoya2eyoW7S7OW80h7-metadata.xml",
-//                "/www.okta.com-exkoya2eyoW7S7OW80h7-samlResponse.txt");
-//    }
+    @Test
+    public void validate_Okta_exkoya2eyoW7S7OW80h7_SamlResponse() throws IOException, SamlException, ValidationException, MessageDecodingException, TransformerException {
+        // OKTA_PREVIEW_RALLY_PROD_SSO_METADATA_LOCATION
+        validateSAMLResponse(
+                "ssouser1@test.com",
+                "170904",
+                "https://rally1.rallydev.com",
+                "/www.okta.com-exkoya2eyoW7S7OW80h7-metadata.xml",
+                "/www.okta.com-exkoya2eyoW7S7OW80h7-samlResponse.txt");
+    }
 
     @Test
     public void validate_Okta_exk1gdbaindeR1Jrj1d8_SamlResponse() throws IOException, SamlException, ValidationException, MessageDecodingException, TransformerException {
