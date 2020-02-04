@@ -33,17 +33,39 @@ public class SAMLResponseValidatorTest extends Assert {
 
     @Test
     public void validateGoodSAMLResponse() throws IOException, SamlException, ValidationException, MessageDecodingException, TransformerException {
+        String audience = MockSAMLBuilder.DEFAULT_AUDIENCE;
+
         String defaultMetadata = MockSAMLBuilder.createDefaultMetadata();
+        SAMLResponseValidator validator = SAMLUtils.createSAMLResponseValidator(defaultMetadata.getBytes(StandardCharsets.UTF_8), audience);
 
         String responseString = MockSAMLBuilder.createDefaultSAMLResponse();
-
-        SAMLResponseValidator validator = SAMLUtils.createSAMLResponseValidator(defaultMetadata.getBytes(StandardCharsets.UTF_8), MockSAMLBuilder.DEFAULT_AUDIENCE);
         Response response = validator.readAndValidateSAMLResponse(responseString);
 
         Map<String, String> parsedAttributes = SAMLUtils.getAttributes(response);
         System.out.println(parsedAttributes);
         Map<String, String> expectedAttributes = getDefaultAttributes();
-        expectedAttributes.put(SAMLResponseValidator.AUDIENCE_REQUIRED_SAML_RESPONSE_CONDITION, MockSAMLBuilder.DEFAULT_AUDIENCE);
+        expectedAttributes.put(SAMLResponseValidator.AUDIENCE_REQUIRED_SAML_RESPONSE_CONDITION, audience);
+
+        assertEquals(parsedAttributes.size(), expectedAttributes.size());
+        assertEquals(parsedAttributes, expectedAttributes);
+    }
+
+    @Test(expectedExceptions = ValidationException.class, expectedExceptionsMessageRegExp = "the SAML response does not have the expected audience: expected=bogusAudience  actual=https://rally1.rallydev.com")
+    public void throwsUnexpectedAudienceException() throws IOException, SamlException, ValidationException, MessageDecodingException, TransformerException {
+        String audienceInResponse = "bogusAudience";
+        String expectedAudience = MockSAMLBuilder.DEFAULT_AUDIENCE;
+
+        String defaultMetadata = MockSAMLBuilder.createDefaultMetadata();
+        SAMLResponseValidator validator = SAMLUtils.createSAMLResponseValidator(defaultMetadata.getBytes(StandardCharsets.UTF_8), audienceInResponse);
+
+        String responseString = MockSAMLBuilder.createDefaultSAMLResponse();
+        Response response = validator.readAndValidateSAMLResponse(responseString);
+
+        Map<String, String> parsedAttributes = SAMLUtils.getAttributes(response);
+        System.out.println(parsedAttributes);
+        Map<String, String> expectedAttributes = getDefaultAttributes();
+        expectedAttributes.put(SAMLResponseValidator.AUDIENCE_REQUIRED_SAML_RESPONSE_CONDITION, expectedAudience);
+
         assertEquals(parsedAttributes.size(), expectedAttributes.size());
         assertEquals(parsedAttributes, expectedAttributes);
     }
@@ -209,7 +231,7 @@ public class SAMLResponseValidatorTest extends Assert {
 
     }
 
-    public void assertThrowsErrorWithAttributes(String key, Object value) throws SamlException{
+    private void assertThrowsErrorWithAttributes(String key, Object value) throws SamlException{
         Map attributes = getDefaultAttributes();
         attributes.put(key, value);
         SAMLResponseValidator validator = SAMLUtils.createSAMLResponseValidator(SAMLTestUtils.readClasspathResource("sample_metadata.xml"), MockSAMLBuilder.DEFAULT_AUDIENCE);
@@ -241,11 +263,11 @@ public class SAMLResponseValidatorTest extends Assert {
     }
 
 
-    public static Map<String, String> getDefaultAttributes() {
+    private static Map<String, String> getDefaultAttributes() {
         return getExpectedAttributes( MockSAMLBuilder.DEFAULT_EMAIL, MockSAMLBuilder.DEFAULT_SUBSCRIPTION);
     }
 
-    public static Map<String, String> getExpectedAttributes(String email, String subscription) {
+    private static Map<String, String> getExpectedAttributes(String email, String subscription) {
         Map<String, String> attributes = new HashMap<>();
         attributes.put(SAMLResponseValidator.EMAIL_REQUIRED_SAML_RESPONSE_ASSERTION, email);
         attributes.put(SAMLResponseValidator.SUBSCRIPTION_REQUIRED_SAML_RESPONSE_ASSERTION, subscription);
