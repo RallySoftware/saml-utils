@@ -27,12 +27,6 @@ public class SAMLTestUtils {
         return attributeDefs;
     }
 
-    public static Map<String, String> missingEmailAttributeDefinitions() {
-        Map<String, String> attributeDefs = new HashMap<>();
-        attributeDefs.put(SAMLResponseValidator.SUBSCRIPTION_REQUIRED_SAML_RESPONSE_ASSERTION, "urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified");
-        return attributeDefs;
-    }
-
     public static String getResourceFileContentsAsString(String resourceFileName) throws IOException {
         Class clazz = SAMLResponseValidator.class;
         InputStream inputStream = clazz.getResourceAsStream(resourceFileName);

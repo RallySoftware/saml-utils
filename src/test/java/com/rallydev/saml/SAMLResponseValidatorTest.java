@@ -288,7 +288,6 @@ public class SAMLResponseValidatorTest extends Assert {
         // Even though there is no 'email' assertion in the SAML response,
         // getAttributes()  returns the value of the SAML Subject in the SAML response as the the value of the 'eamil' assertion
         attributes.put(SAMLResponseValidator.EMAIL_OPTIONAL_SAML_RESPONSE_ASSERTION, emailValue);
-
         assertEquals(parsedAttributes.size(), attributes.size());
         assertEquals(parsedAttributes, attributes);
     }
