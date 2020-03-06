@@ -1,6 +1,7 @@
 package com.rallydev.saml;
 
 import org.opensaml.DefaultBootstrap;
+import org.opensaml.saml2.core.Assertion;
 import org.opensaml.saml2.core.Response;
 import org.opensaml.saml2.core.AuthnRequest;
 import org.opensaml.saml2.metadata.EntityDescriptor;
@@ -44,6 +45,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -182,6 +184,12 @@ public class SAMLUtils {
                     String content = attribute.getAttributeValues().get(0).getDOM().getTextContent();
                     map.put(name, content);
                 });
+        List<Assertion> assertions = response.getAssertions();
+        String samlSubjectValue = "<not found>";
+        if (assertions.size() > 0) {
+            samlSubjectValue = assertions.get(0).getSubject().getNameID().getValue();
+        }
+        map.put(SAMLResponseValidator.EMAIL_REQUIRED_SAML_RESPONSE_ASSERTION, samlSubjectValue);
         return Collections.unmodifiableMap(map);
     }
 
