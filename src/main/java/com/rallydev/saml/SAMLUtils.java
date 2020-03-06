@@ -184,13 +184,24 @@ public class SAMLUtils {
                     String content = attribute.getAttributeValues().get(0).getDOM().getTextContent();
                     map.put(name, content);
                 });
+        replaceEmailWithSamlSubject(response, map);
+        return Collections.unmodifiableMap(map);
+    }
+
+    private static void replaceEmailWithSamlSubject(Response response, Map<String, String> map) {
+        // Initially, we fully tested our SAML solution using the value of the "eamil" assertion in the SAML response
+        // as the username.  This was incorrect, we should have been using the value of the SAML Subject as the username.
+        // The quickest fix, with limited time, was to change this library to return the value of SAML Subject
+        // as the value of the "email" assertion so that all downstream code in Zuul and ALM could remain
+        // unmodified.
+        // TODO: change this code to return the value of SAML Subject under a meaningful name ("subject")
+        // TODO: change all downstream code in Zuul and ALM to consume it using the correct name ("subject")
         List<Assertion> assertions = response.getAssertions();
         String samlSubjectValue = "<not found>";
         if (assertions.size() > 0) {
             samlSubjectValue = assertions.get(0).getSubject().getNameID().getValue();
         }
-        map.put(SAMLResponseValidator.EMAIL_REQUIRED_SAML_RESPONSE_ASSERTION, samlSubjectValue);
-        return Collections.unmodifiableMap(map);
+        map.put(SAMLResponseValidator.EMAIL_OPTIONAL_SAML_RESPONSE_ASSERTION, samlSubjectValue);
     }
 
     public static String toString(XMLObject object) {

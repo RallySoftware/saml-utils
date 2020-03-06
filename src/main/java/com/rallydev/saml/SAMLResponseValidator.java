@@ -37,9 +37,11 @@ import java.util.Objects;
 public class SAMLResponseValidator {
 
     public static final String SUBSCRIPTION_REQUIRED_SAML_RESPONSE_ASSERTION = "subscription";
-    public static final String EMAIL_REQUIRED_SAML_RESPONSE_ASSERTION = "email";
-
     public static final String AUDIENCE_REQUIRED_SAML_RESPONSE_CONDITION = "audience";
+
+    public static final String EMAIL_OPTIONAL_SAML_RESPONSE_ASSERTION = "email";
+
+    public static final String SUBJECT_REQUIRED_SAML_RESPONSE_ELEMENT = "subject";
 
     private final String ssoEntityId;
     private final Credential credential;

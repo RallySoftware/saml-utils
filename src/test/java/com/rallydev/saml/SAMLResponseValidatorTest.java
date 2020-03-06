@@ -141,7 +141,7 @@ public class SAMLResponseValidatorTest extends Assert {
     private List<String> getRequiredAssertionKeys() {
         return Arrays.asList(
                 SAMLResponseValidator.SUBSCRIPTION_REQUIRED_SAML_RESPONSE_ASSERTION,
-                SAMLResponseValidator.EMAIL_REQUIRED_SAML_RESPONSE_ASSERTION);
+                SAMLResponseValidator.EMAIL_OPTIONAL_SAML_RESPONSE_ASSERTION);
     }
 
     private void validateSAMLResponse(
@@ -164,7 +164,7 @@ public class SAMLResponseValidatorTest extends Assert {
 
         assertEquals(requiredAttributes.size(), getRequiredAssertionKeys().size());
 
-        Map<String, String> expectedAttributes = getExpectedAttributes(username, subscription);
+        Map<String, String> expectedAttributes = getExpectedAttributes(username, subscription, username);
         assertEquals(requiredAttributes, expectedAttributes);
     }
 
@@ -262,14 +262,44 @@ public class SAMLResponseValidatorTest extends Assert {
         assertEquals(parsedAttributes, attributes);
     }
 
+    @Test
+    public void supportMissingEmailAttribute() throws IOException, SamlException, ValidationException, MessageDecodingException, TransformerException {
+        Map<String, String> ssoBindings = defaultSSOBindings();
+        Map<String, String> attributeDefs = defaultAttributeDefinitions();
+        attributeDefs.put("locale", "urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified");
 
-    private static Map<String, String> getDefaultAttributes() {
-        return getExpectedAttributes( MockSAMLBuilder.DEFAULT_EMAIL, MockSAMLBuilder.DEFAULT_SUBSCRIPTION);
+        String metdata = MockSAMLBuilder.createMetadataWithDefaultKey(MockSAMLBuilder.SAMPLE_IDP_ENTITY_ID, ssoBindings, attributeDefs);
+
+        Map<String, String> attributes = getDefaultAttributes();
+        attributes.put("locale", "America/Denver");
+        attributes.put(SAMLResponseValidator.AUDIENCE_REQUIRED_SAML_RESPONSE_CONDITION, MockSAMLBuilder.DEFAULT_AUDIENCE);
+
+        // Remove the 'email' assertion from the attributes passed to createSAMLResponseWithDefaultKey(),
+        // so the SAML Response it generates will not have an 'email' assertion in it.
+        String emailValue = attributes.remove(SAMLResponseValidator.EMAIL_OPTIONAL_SAML_RESPONSE_ASSERTION);
+
+        String responseString = createSAMLResponseWithDefaultKey(attributes, MockSAMLBuilder.SAMPLE_IDP_ENTITY_ID, true);
+        SAMLResponseValidator validator = SAMLUtils.createSAMLResponseValidator(metdata.getBytes(StandardCharsets.UTF_8), MockSAMLBuilder.DEFAULT_AUDIENCE);
+        Response response = validator.readAndValidateSAMLResponse(responseString);
+
+        Map<String, String> parsedAttributes = SAMLUtils.getAttributes(response);
+        System.out.println(parsedAttributes);
+
+        // Even though there is no 'email' assertion in the SAML response,
+        // getAttributes()  returns the value of the SAML Subject in the SAML response as the the value of the 'eamil' assertion
+        attributes.put(SAMLResponseValidator.EMAIL_OPTIONAL_SAML_RESPONSE_ASSERTION, emailValue);
+
+        assertEquals(parsedAttributes.size(), attributes.size());
+        assertEquals(parsedAttributes, attributes);
     }
 
-    private static Map<String, String> getExpectedAttributes(String email, String subscription) {
+    private static Map<String, String> getDefaultAttributes() {
+        return getExpectedAttributes(MockSAMLBuilder.DEFAULT_EMAIL, MockSAMLBuilder.DEFAULT_SUBSCRIPTION, MockSAMLBuilder.DEFAULT_SUBJECT);
+    }
+
+    private static Map<String, String> getExpectedAttributes(String email, String subscription, String subject) {
         Map<String, String> attributes = new HashMap<>();
-        attributes.put(SAMLResponseValidator.EMAIL_REQUIRED_SAML_RESPONSE_ASSERTION, email);
+        attributes.put(SAMLResponseValidator.EMAIL_OPTIONAL_SAML_RESPONSE_ASSERTION, email);
         attributes.put(SAMLResponseValidator.SUBSCRIPTION_REQUIRED_SAML_RESPONSE_ASSERTION, subscription);
         return attributes;
     }

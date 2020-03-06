@@ -22,7 +22,13 @@ public class SAMLTestUtils {
 
     public static Map<String, String> defaultAttributeDefinitions() {
         Map<String, String> attributeDefs = new HashMap<>();
-        attributeDefs.put(SAMLResponseValidator.EMAIL_REQUIRED_SAML_RESPONSE_ASSERTION, "urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified");
+        attributeDefs.put(SAMLResponseValidator.EMAIL_OPTIONAL_SAML_RESPONSE_ASSERTION, "urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified");
+        attributeDefs.put(SAMLResponseValidator.SUBSCRIPTION_REQUIRED_SAML_RESPONSE_ASSERTION, "urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified");
+        return attributeDefs;
+    }
+
+    public static Map<String, String> missingEmailAttributeDefinitions() {
+        Map<String, String> attributeDefs = new HashMap<>();
         attributeDefs.put(SAMLResponseValidator.SUBSCRIPTION_REQUIRED_SAML_RESPONSE_ASSERTION, "urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified");
         return attributeDefs;
     }
