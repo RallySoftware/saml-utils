@@ -164,7 +164,7 @@ public class SAMLResponseValidatorTest extends Assert {
 
         assertEquals(requiredAttributes.size(), getRequiredAssertionKeys().size());
 
-        Map<String, String> expectedAttributes = getExpectedAttributes(username, subscription, username);
+        Map<String, String> expectedAttributes = getExpectedAttributes(username, subscription);
         assertEquals(requiredAttributes, expectedAttributes);
     }
 
@@ -293,10 +293,10 @@ public class SAMLResponseValidatorTest extends Assert {
     }
 
     private static Map<String, String> getDefaultAttributes() {
-        return getExpectedAttributes(MockSAMLBuilder.DEFAULT_EMAIL, MockSAMLBuilder.DEFAULT_SUBSCRIPTION, MockSAMLBuilder.DEFAULT_SUBJECT);
+        return getExpectedAttributes(MockSAMLBuilder.DEFAULT_EMAIL, MockSAMLBuilder.DEFAULT_SUBSCRIPTION);
     }
 
-    private static Map<String, String> getExpectedAttributes(String email, String subscription, String subject) {
+    private static Map<String, String> getExpectedAttributes(String email, String subscription) {
         Map<String, String> attributes = new HashMap<>();
         attributes.put(SAMLResponseValidator.EMAIL_OPTIONAL_SAML_RESPONSE_ASSERTION, email);
         attributes.put(SAMLResponseValidator.SUBSCRIPTION_REQUIRED_SAML_RESPONSE_ASSERTION, subscription);
