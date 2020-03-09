@@ -100,10 +100,11 @@ public class MockSAMLBuilder {
     public static final String DEFAULT_EMAIL = "ue@test.com";
     public static final String DEFAULT_SUBSCRIPTION = "100";
     public static final String DEFAULT_AUDIENCE = "https://rally1.rallydev.com";
+    public static final String DEFAULT_SUBJECT = "ue@test.com";
 
     public static String createDefaultSAMLResponse() {
         HashMap<String, String> attributes = new HashMap<>();
-        attributes.put(SAMLResponseValidator.EMAIL_REQUIRED_SAML_RESPONSE_ASSERTION, DEFAULT_EMAIL);
+        attributes.put(SAMLResponseValidator.EMAIL_OPTIONAL_SAML_RESPONSE_ASSERTION, DEFAULT_EMAIL);
         attributes.put(SAMLResponseValidator.SUBSCRIPTION_REQUIRED_SAML_RESPONSE_ASSERTION, DEFAULT_SUBSCRIPTION);
         attributes.put(SAMLResponseValidator.AUDIENCE_REQUIRED_SAML_RESPONSE_CONDITION, DEFAULT_AUDIENCE);
 
@@ -231,7 +232,7 @@ public class MockSAMLBuilder {
         NameIDBuilder nameIDBuilder = new NameIDBuilder();
         NameID nameId = nameIDBuilder.buildObject();
         nameId.setFormat("urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified");
-        nameId.setValue((String)attributeMap.get(SAMLResponseValidator.EMAIL_REQUIRED_SAML_RESPONSE_ASSERTION));
+        nameId.setValue(MockSAMLBuilder.DEFAULT_SUBJECT);
         subject.setNameID(nameId);
         SubjectConfirmationBuilder subjectConfirmationBuilder = new SubjectConfirmationBuilder();
         SubjectConfirmation subjectConfirmation = subjectConfirmationBuilder.buildObject();
@@ -352,7 +353,7 @@ public class MockSAMLBuilder {
         ssoBindings.put("urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST", "https://rapid.ca.com:443/affwebservices/public/saml2sso");
 
         Map<String, String> attributeDefs = new HashMap<>();
-        attributeDefs.put(SAMLResponseValidator.EMAIL_REQUIRED_SAML_RESPONSE_ASSERTION, "urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified");
+        attributeDefs.put(SAMLResponseValidator.EMAIL_OPTIONAL_SAML_RESPONSE_ASSERTION, "urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified");
         attributeDefs.put(SAMLResponseValidator.SUBSCRIPTION_REQUIRED_SAML_RESPONSE_ASSERTION, "urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified");
 
         return createMetadataWithDefaultKey(SAMPLE_IDP_ENTITY_ID, ssoBindings, attributeDefs);
