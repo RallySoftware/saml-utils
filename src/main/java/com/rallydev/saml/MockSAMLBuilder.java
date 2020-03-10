@@ -3,6 +3,7 @@ package com.rallydev.saml;
 import org.joda.time.DateTime;
 import org.opensaml.Configuration;
 import org.opensaml.common.SAMLObjectBuilder;
+import org.opensaml.common.SAMLRuntimeException;
 import org.opensaml.saml2.core.Assertion;
 import org.opensaml.saml2.core.Attribute;
 import org.opensaml.saml2.core.AttributeStatement;
@@ -232,7 +233,7 @@ public class MockSAMLBuilder {
         NameIDBuilder nameIDBuilder = new NameIDBuilder();
         NameID nameId = nameIDBuilder.buildObject();
         nameId.setFormat("urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified");
-        nameId.setValue(MockSAMLBuilder.DEFAULT_SUBJECT);
+        nameId.setValue(getSubject(attributeMap));
         subject.setNameID(nameId);
         SubjectConfirmationBuilder subjectConfirmationBuilder = new SubjectConfirmationBuilder();
         SubjectConfirmation subjectConfirmation = subjectConfirmationBuilder.buildObject();
@@ -243,6 +244,13 @@ public class MockSAMLBuilder {
         subjectConfirmation.setSubjectConfirmationData(subjectConfirmationData);
         subject.getSubjectConfirmations().add(subjectConfirmation);
         return subject;
+    }
+
+    private static String getSubject(Map<String, ?> attributeMap) {
+        if (attributeMap.containsKey(SAMLResponseValidator.SUBJECT_REQUIRED_SAML_RESPONSE_ELEMENT)) {
+            return (String) attributeMap.get(SAMLResponseValidator.SUBJECT_REQUIRED_SAML_RESPONSE_ELEMENT);
+        }
+        return MockSAMLBuilder.DEFAULT_SUBJECT;
     }
 
     private static DateTime getSubjectNotOnOrAfterDate(Map<String, ?> attributeMap) {
