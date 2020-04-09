@@ -84,6 +84,9 @@ public class SAMLUtils {
      */
     public static SAMLResponseValidator createSAMLResponseValidator(byte[] metadataXmlBytes, String audience) throws SamlException {
         MetadataProvider metadataProvider = loadSAMLMetadata(new ByteArrayInputStream(metadataXmlBytes));
+        if (metadataXmlBytes == null) {
+            throw new SamlException("No valid metadata provided");
+        }
         return createSAMLResponseValidator(metadataProvider, audience);
     }
 
