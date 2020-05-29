@@ -22,22 +22,13 @@ Map<String, String> parsedAttributes = SAMLUtils.getAttributes(response);
 // 'email' => 'ue@ca.com'
 // 'subscription => '100'
 ```
-### Publishing artifact
+### CI Pipeline
 
-NOTE: At present, there is no Continuous Integration (CI) pipeline set up for this library.
+When you merge a PR to the master branch, it will trigger the saml-utils CI pipeline to run:
 
-Look for build number under 
-http://repo-depot.f4tech.com/artifactory/rally-maven/com/rallydev/saml-utils-jar/
-Increment by 1
+http://microservices.ci.f4tech.com/job/saml-utils/job/00-saml-utils-pipeline/
 
-```$xslt
-
-gw clean
-BUILD_NUMBER=<> gw shadowJar
-BUILD_NUMBER=<> gw publishSAMLJarPublicationToMavenRepository
-
-```
-
-Published artifact are under 
+The pipeline will run the tests, and if they succeed, publish the newest version of the jar to this repository:
 
 http://repo-depot.f4tech.com/artifactory/rally-maven/com/rallydev/saml-utils-jar/
+
