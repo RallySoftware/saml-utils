@@ -32,3 +32,5 @@ The pipeline will run the tests, and if they succeed, publish the newest version
 
 http://repo-depot.f4tech.com/artifactory/rally-maven/com/rallydev/saml-utils-jar/
 
+To make ALM or Zuul use the newest version of the jar, find the newest jar build number in the above repository 
+and modify the saml-util references in ALM and Zuul to use it.
