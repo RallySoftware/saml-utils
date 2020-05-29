@@ -7,5 +7,8 @@ echo "NEXT_BUILD_NUMBER=${NEXT_BUILD_NUMBER}"
 
 # build and publish jar
 gw clean
+echo 'gw clean'
 BUILD_NUMBER=${NEXT_BUILD_NUMBER} gw shadowJar
+echo 'BUILD_NUMBER=${NEXT_BUILD_NUMBER} gw shadowJar'
 BUILD_NUMBER=${NEXT_BUILD_NUMBER} gw publishSAMLJarPublicationToMavenRepository
+echo 'BUILD_NUMBER=${NEXT_BUILD_NUMBER} gw publishSAMLJarPublicationToMavenRepository'
