@@ -18,7 +18,7 @@ public class AuthNRequestBuilderTest extends Assert {
         String issuerId = SAMLUtils.SP_ENTITY_ID_ALM;
         String samlRequestParam = SAMLUtils.generateSAMLRequestParameterValue(assertionConsumerServiceUrl, issuerId);
         assertTrue(samlRequestParam != null);
-        assertTrue(samlRequestParam.isEmpty());
+        assertTrue(!samlRequestParam.isEmpty());
     }
 
 }
