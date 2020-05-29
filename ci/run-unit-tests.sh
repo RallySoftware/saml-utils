@@ -1,3 +1,4 @@
 #!/bin/bash -el
+echo gw test
 gw test
-echo 'gw test'
+echo DONE
