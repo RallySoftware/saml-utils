@@ -4,7 +4,7 @@
 NEXT_BUILD_NUMBER=$(curl http://repo-depot.f4tech.com/artifactory/rally-maven/com/rallydev/saml-utils-jar/maven-metadata.xml | sed -n 's:.*<release>\(.*\)</release>.*:\1:p')
 let NEXT_BUILD_NUMBER+=1
 echo NEXT_BUILD_NUMBER=${NEXT_BUILD_NUMBER}
-echo "version=${NEXT_BUILD_NUMBER}" > version.prop
+echo "version=${NEXT_BUILD_NUMBER}" > saml_utils_version.prop
 
 version=0.1.527
 
