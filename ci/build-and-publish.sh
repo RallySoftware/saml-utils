@@ -16,3 +16,6 @@ BUILD_NUMBER=${NEXT_BUILD_NUMBER} gw shadowJar
 echo BUILD_NUMBER=${NEXT_BUILD_NUMBER} gw publishSAMLJarPublicationToMavenRepository
 BUILD_NUMBER=${NEXT_BUILD_NUMBER} gw publishSAMLJarPublicationToMavenRepository
 echo DONE
+
+sleep 900
+
