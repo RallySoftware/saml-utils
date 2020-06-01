@@ -17,5 +17,4 @@ echo BUILD_NUMBER=${NEXT_BUILD_NUMBER} gw publishSAMLJarPublicationToMavenReposi
 BUILD_NUMBER=${NEXT_BUILD_NUMBER} gw publishSAMLJarPublicationToMavenRepository
 echo DONE
 
-sleep 900
 
