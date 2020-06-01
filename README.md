@@ -22,22 +22,21 @@ Map<String, String> parsedAttributes = SAMLUtils.getAttributes(response);
 // 'email' => 'ue@ca.com'
 // 'subscription => '100'
 ```
-### Publishing artifact
+### CI Pipeline
 
-NOTE: At present, there is no Continuous Integration (CI) pipeline set up for this library.
+You can run an on-demand on any git branch here:
 
-Look for build number under 
-http://repo-depot.f4tech.com/artifactory/rally-maven/com/rallydev/saml-utils-jar/
-Increment by 1
+http://microservices.ci.f4tech.com/job/saml-utils/job/0-on-demand-saml-utils/
 
-```$xslt
 
-gw clean
-BUILD_NUMBER=<> gw shadowJar
-BUILD_NUMBER=<> gw publishSAMLJarPublicationToMavenRepository
+When you merge a PR to the master branch, it will trigger the saml-utils CI pipeline to run:
 
-```
+http://microservices.ci.f4tech.com/job/saml-utils/job/00-saml-utils-pipeline/
 
-Published artifact are under 
+The pipeline will run the tests, and if they succeed, publish the newest version of the jar to this repository:
 
 http://repo-depot.f4tech.com/artifactory/rally-maven/com/rallydev/saml-utils-jar/
+
+
+To make ALM or Zuul use the newest version of the jar, find the newest jar build number in the above repository 
+and modify the saml-util references in ALM and Zuul to use it.
