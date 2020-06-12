@@ -10,7 +10,6 @@ public class AuthNRequestBuilderTest extends Assert {
     static {
         SAMLUtils.init();
     }
-    //need to add something that will compare with master
 
     @Test
     public void buildAuthnRequestAndConvertToParam() throws SamlException
